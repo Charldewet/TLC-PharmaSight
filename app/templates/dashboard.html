@@ -2777,20 +2777,34 @@
         // Only show loading for API calls, not for static assets
         var isApiCall = url && (url.startsWith('/api/') || url.includes('/api/'));
         
-        if (isApiCall) {
+        // Exclude stock query endpoints from showing loading modal
+        var isStockQueryEndpoint = false;
+        if (isApiCall && url) {
+          // Check if this is a stock query related endpoint
+          isStockQueryEndpoint = (
+            url.includes('/api/products/search') ||
+            url.includes('/api/products/') && url.includes('/stock') ||
+            url.includes('/api/products/') && url.includes('/sales') ||
+            url.includes('/api/negative-stock') ||
+            url.includes('/api/stock-value')
+          );
+        }
+        
+        // Show loading overlay only for API calls that are NOT stock query endpoints
+        if (isApiCall && !isStockQueryEndpoint) {
           showLoadingOverlay();
         }
         
         return originalFetch.apply(this, args)
           .then(function(response) {
-            if (isApiCall) {
+            if (isApiCall && !isStockQueryEndpoint) {
               // Small delay to prevent flickering on fast responses
               setTimeout(hideLoadingOverlay, 150);
             }
             return response;
           })
           .catch(function(error) {
-            if (isApiCall) {
+            if (isApiCall && !isStockQueryEndpoint) {
               setTimeout(hideLoadingOverlay, 150);
             }
             throw error;

@@ -23,11 +23,14 @@ API_KEY = os.getenv("PHARMA_API_KEY", "")
 SESSION_SECRET = os.getenv("SESSION_SECRET_KEY", "change-me")
 
 # Session middleware
+# https_only should be True in production with custom domain for security
+# Set to False for local development or if Render doesn't handle HTTPS properly
+HTTPS_ONLY = os.getenv("HTTPS_ONLY", "true").lower() == "true"
 app.add_middleware(
     SessionMiddleware, 
     secret_key=SESSION_SECRET, 
     max_age=60 * 60 * 12, 
-    https_only=False,
+    https_only=HTTPS_ONLY,
     same_site="lax"
 )
 

@@ -6462,18 +6462,7 @@ select.control-lg option {
     height: 14px;
   }
   
-  /* Hide text on very small screens, show only icon */
-  @media (max-width: 480px) {
-    .group-view-toggle-btn span {
-      display: none;
-    }
-    
-    .group-view-toggle-btn {
-      padding: 6px 8px;
-      min-width: 36px;
-      justify-content: center;
-    }
-  }
+  /* Keep text visible since "Group" is short enough to fit */
 }
 
 .group-view-toggle-btn:hover {

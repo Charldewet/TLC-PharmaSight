@@ -64,7 +64,11 @@
 
 html, body { 
   height: 100%; 
+  height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  min-height: 100vh; /* Fallback for older browsers */
   overflow: hidden;
+  /* Support for safe area insets on notched devices */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 body {
@@ -75,6 +79,9 @@ body {
   line-height: 1.5;
   position: relative;
   overflow: hidden;
+  /* Use full viewport height on mobile */
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height */
 }
 
 /* Enhanced Animated Background */
@@ -103,13 +110,28 @@ body::before {
 .app-layout {
   display: flex !important;
   height: 100vh !important;
+  height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
+  min-height: 100vh !important; /* Fallback for older browsers */
   overflow: visible !important;
   overflow-y: hidden !important;
   width: 100% !important;
   padding: 20px;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); /* Account for safe areas */
   gap: 20px;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .app-layout {
+    padding: 10px;
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    gap: 10px;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
 }
 
 /* Refined Glass Sidebar */
@@ -127,6 +149,8 @@ body::before {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
   height: calc(100vh - 40px);
+  height: calc(100dvh - 40px); /* Dynamic viewport height for mobile */
+  min-height: calc(100vh - 40px); /* Fallback */
   position: relative;
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.1),
@@ -7868,6 +7892,58 @@ body.admin-page .main-content {
 .styled-modal-actions .btn-primary,
 .styled-modal-actions .btn-secondary {
   min-width: 100px;
+}
+
+/* Mobile Full Height Support */
+@media (max-width: 768px) {
+  html {
+    height: 100%;
+    height: 100dvh;
+    min-height: 100vh;
+  }
+  
+  body {
+    height: 100%;
+    height: 100dvh;
+    min-height: 100vh;
+  }
+  
+  .sidebar {
+    height: calc(100dvh - 20px) !important;
+    min-height: calc(100vh - 20px) !important;
+  }
+  
+  .main-content {
+    height: 100%;
+    height: 100dvh;
+    min-height: 100vh;
+  }
+  
+  .content-area {
+    height: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+  }
+  
+  .app-layout {
+    height: -webkit-fill-available !important;
+    min-height: -webkit-fill-available !important;
+  }
+  
+  @media (max-width: 768px) {
+    .app-layout {
+      height: -webkit-fill-available !important;
+      min-height: -webkit-fill-available !important;
+    }
+  }
 }
 
 

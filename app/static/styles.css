@@ -485,8 +485,52 @@ body::before {
   margin-right: 25%; /* Position right edge at 75% (100% - 25% = 75%) to match cards */
 }
 
+/* Mobile: Make controls fit on one line */
+@media (max-width: 768px) {
+  .top-bar-controls {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-right: 0;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  
+  .top-bar-controls::-webkit-scrollbar {
+    height: 2px;
+  }
+  
+  .top-bar-controls::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 1px;
+  }
+}
+
 .top-bar-controls label {
   min-width: 180px;
+}
+
+/* Mobile: Smaller month control */
+@media (max-width: 768px) {
+  .top-bar-controls label {
+    min-width: auto;
+    flex-shrink: 0;
+  }
+  
+  .top-bar-controls label.with-icon {
+    font-size: 12px;
+  }
+  
+  .top-bar-controls .control-lg {
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+  
+  .top-bar-controls .with-icon span {
+    font-size: 11px;
+  }
 }
 
 /* Content Area */
@@ -6301,6 +6345,23 @@ select.control-lg option {
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile: Smaller date picker button */
+@media (max-width: 768px) {
+  .date-picker-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+  
+  .date-picker-btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .date-picker-btn:hover {
@@ -6330,6 +6391,32 @@ select.control-lg option {
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile: Smaller pharmacy picker button */
+@media (max-width: 768px) {
+  .pharmacy-picker-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+    border-radius: 8px;
+    max-width: 140px;
+    overflow: hidden;
+  }
+  
+  .pharmacy-picker-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .pharmacy-picker-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
 }
 
 .pharmacy-picker-btn:hover {
@@ -6358,6 +6445,35 @@ select.control-lg option {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile: Smaller group view toggle button */
+@media (max-width: 768px) {
+  .group-view-toggle-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+  
+  .group-view-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  /* Hide text on very small screens, show only icon */
+  @media (max-width: 480px) {
+    .group-view-toggle-btn span {
+      display: none;
+    }
+    
+    .group-view-toggle-btn {
+      padding: 6px 8px;
+      min-width: 36px;
+      justify-content: center;
+    }
+  }
 }
 
 .group-view-toggle-btn:hover {

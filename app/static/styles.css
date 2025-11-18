@@ -2385,7 +2385,45 @@ select.control-lg option {
   letter-spacing: 0.5px;
 }
 
+/* Hide filters and send reminders sections on mobile phones only */
+/* Keep debtors list and ageing buckets card visible */
+@media (max-width: 600px) {
+  #debtor-filters-section,
+  #debtor-communication-section {
+    display: none !important;
+  }
+  
+  /* Ensure debtors list and ageing buckets card remain visible */
+  #debtor-statistics-section,
+  #debtor-table-section {
+    display: block !important;
+  }
+  
+  /* Ensure debtor summary layout and cards are visible on mobile */
+  .debtor-tools-container .debtor-summary-layout {
+    display: grid !important;
+  }
+  
+  .debtor-tools-container .debtor-summary-layout > .dashboard-card,
+  .debtor-tools-container .debtor-summary-layout > .debtor-overview-cards > .dashboard-card,
+  .debtor-tools-container .debtor-ageing-card {
+    display: flex !important;
+  }
+  
+  /* Ensure debtor table is visible */
+  #debtor-table-section .debtor-table-container,
+  #debtor-table-section .debtor-table-wrapper,
+  #debtor-table-section .debtor-table {
+    display: block !important;
+  }
+  
+  #debtor-table-section .debtor-table {
+    display: table !important;
+  }
+}
+
 @media (max-width: 768px) {
+  
   .debtor-filters-grid {
     grid-template-columns: 1fr;
     padding: 16px;
@@ -2396,8 +2434,68 @@ select.control-lg option {
     grid-column: 1;
   }
   
-  .debtor-checkbox-group {
+  /* Ageing buckets - 3 column grid on mobile */
+  .debtor-ageing-buckets-filter .debtor-checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .debtor-ageing-buckets-filter .debtor-checkbox-group .checkbox-label {
+    font-size: 12px;
+    padding: 6px 0;
+    gap: 6px;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .debtor-ageing-buckets-filter .debtor-checkbox-group .checkbox-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+  }
+  
+  .debtor-ageing-buckets-filter .debtor-checkbox-group .checkbox-label input[type="checkbox"]:checked::after {
+    left: 4px;
+    top: 1px;
+    width: 3px;
+    height: 6px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+  
+  /* Contact filters - vertical stack on mobile */
+  .debtor-contact-filters .debtor-checkbox-group {
+    display: flex;
     flex-direction: column;
+    gap: 12px;
+  }
+  
+  .debtor-contact-filters .debtor-checkbox-group .checkbox-label {
+    font-size: 13px;
+    padding: 10px 0;
+    gap: 10px;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+  
+  .debtor-contact-filters .debtor-checkbox-group .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+  }
+  
+  .debtor-contact-filters .debtor-checkbox-group .checkbox-label input[type="checkbox"]:checked::after {
+    left: 5px;
+    top: 2px;
+    width: 3px;
+    height: 7px;
+    border-width: 0 2px 2px 0;
   }
 }
 
@@ -3280,6 +3378,13 @@ select.control-lg option {
 @media (max-width: 430px) {
   .dashboard-summary-layout > .dashboard-card {
     display: none;
+  }
+  
+  /* Exception: Keep debtor tools cards visible */
+  .debtor-tools-container .debtor-summary-layout > .dashboard-card,
+  .debtor-tools-container .debtor-summary-layout > .debtor-overview-cards > .dashboard-card,
+  .debtor-tools-container .debtor-ageing-card {
+    display: flex !important;
   }
   
   .single-pharmacy-view .dashboard-combined-metrics-card {

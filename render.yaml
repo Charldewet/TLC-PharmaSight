@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: pharmasight-budgeting-app
+    env: python
+    plan: free  # Change to 'starter' or 'standard' for production
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Will be set from PostgreSQL service
+      - key: PHARMA_API_BASE
+        value: https://pharmacy-api-webservice.onrender.com
+      - key: PHARMA_API_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: SESSION_SECRET_KEY
+        generateValue: true  # Render will generate a secure key
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: pharmasight-db
+    plan: free  # Change to 'starter' or 'standard' for production
+    databaseName: pharmacy_reports
+    user: pharmacy_user
+

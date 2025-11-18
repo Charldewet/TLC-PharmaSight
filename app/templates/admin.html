@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or 'Admin' }} • PharmaSight</title>
+  <link rel="stylesheet" href="/static/styles.css?v=139" />
+</head>
+<body class="admin-page">
+  <!-- Alert Modal -->
+  <div class="styled-modal-overlay" id="alert-modal-overlay" style="display: none;">
+    <div class="styled-modal">
+      <div class="styled-modal-header">
+        <h2 id="alert-modal-title">Alert</h2>
+        <button class="styled-modal-close" id="alert-modal-close" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="styled-modal-body">
+        <div class="styled-modal-icon" id="alert-modal-icon"></div>
+        <p class="styled-modal-message" id="alert-modal-message"></p>
+      </div>
+      <div class="styled-modal-actions">
+        <button class="btn-primary" id="alert-modal-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="styled-modal-overlay" id="confirm-modal-overlay" style="display: none;">
+    <div class="styled-modal">
+      <div class="styled-modal-header">
+        <h2 id="confirm-modal-title">Confirm</h2>
+        <button class="styled-modal-close" id="confirm-modal-close" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="styled-modal-body">
+        <div class="styled-modal-icon" id="confirm-modal-icon"></div>
+        <p class="styled-modal-message" id="confirm-modal-message"></p>
+      </div>
+      <div class="styled-modal-actions">
+        <button class="btn-secondary" id="confirm-modal-cancel">Cancel</button>
+        <button class="btn-primary" id="confirm-modal-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Modal -->
+  <div class="styled-modal-overlay" id="prompt-modal-overlay" style="display: none;">
+    <div class="styled-modal">
+      <div class="styled-modal-header">
+        <h2 id="prompt-modal-title">Input Required</h2>
+        <button class="styled-modal-close" id="prompt-modal-close" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="styled-modal-body">
+        <div class="styled-modal-icon" id="prompt-modal-icon"></div>
+        <p class="styled-modal-message" id="prompt-modal-message"></p>
+        <div class="styled-modal-input-group">
+          <input type="text" id="prompt-modal-input" class="styled-modal-input" placeholder="Enter value..." />
+        </div>
+      </div>
+      <div class="styled-modal-actions">
+        <button class="btn-secondary" id="prompt-modal-cancel">Cancel</button>
+        <button class="btn-primary" id="prompt-modal-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <img src="/static/img/logo_light.png" alt="PharmaSight" class="sidebar-logo" />
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Navigation</div>
+          <a href="/dashboard#dashboard" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </span>
+            <span>Dashboard</span>
+          </a>
+          <a href="/dashboard#daily-summary" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </span>
+            <span>Daily Summary</span>
+          </a>
+          <a href="/dashboard#monthly-summary" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </span>
+            <span>Monthly Summary</span>
+          </a>
+          <a href="/dashboard#stock-management" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </span>
+            <span>Stock Management</span>
+          </a>
+          <a href="/dashboard#stock-queries" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+            </span>
+            <span>Stock Queries</span>
+          </a>
+          <a href="/dashboard#debtor-tools" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </span>
+            <span>Debtor Tools</span>
+          </a>
+          <a href="/dashboard#daily" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11H5a2 2 0 0 0-2 2v3c0 1.1.9 2 2 2h4m0-7h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H9m0-7V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </span>
+            <span>Daily Tracking</span>
+          </a>
+          <a href="/dashboard#targets" class="nav-item">
+            <span class="nav-item-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </span>
+            <span>Targets</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="/admin" class="nav-item admin-nav-item active" title="Admin Panel">
+          <span class="nav-item-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </span>
+          <span>Admin</span>
+        </a>
+        <div class="user-info">
+          <div class="user-avatar">{{ username[0]|upper if username else 'U' }}</div>
+          <div class="user-details">
+            <div class="user-name">{{ username }}</div>
+            <div class="user-role">Administrator</div>
+          </div>
+          <a href="/" class="sign-out-btn" title="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16,17 21,12 16,7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <h1 class="page-title">User Management</h1>
+        </div>
+      </header>
+
+      <!-- Admin Content -->
+      <div class="admin-container">
+        <!-- Create User Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <h2>Create New User</h2>
+            <button class="btn btn-primary" id="create-user-btn">Create User</button>
+          </div>
+        </div>
+
+        <!-- Users List Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <h2>Users</h2>
+            <button class="btn btn-secondary" id="refresh-users-btn">Refresh</button>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table" id="users-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Status</th>
+                  <th>Pharmacies</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr>
+                  <td colspan="6" class="loading-cell">Loading users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal" id="create-user-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New User</h2>
+        <button class="modal-close" id="close-create-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-user-form">
+          <div class="form-group">
+            <label for="new-username">Username *</label>
+            <input type="text" id="new-username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="new-password">Password *</label>
+            <input type="password" id="new-password" name="password" required />
+          </div>
+          <div class="form-group">
+            <label>Grant Pharmacy Access</label>
+            <div id="pharmacy-checkboxes" class="pharmacy-checkboxes">
+              <div class="loading-text">Loading pharmacies...</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-create-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal" id="edit-user-modal" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h2>Edit User</h2>
+        <button class="modal-close" id="close-edit-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id" />
+          <div class="form-group">
+            <label for="edit-username">Username *</label>
+            <input type="text" id="edit-username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-password">New Password (leave blank to keep current)</label>
+            <input type="password" id="edit-password" name="password" />
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="edit-is-active" name="is_active" />
+              <span>Active</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Pharmacy Access</label>
+            <div class="pharmacy-search-container">
+              <input 
+                type="text" 
+                id="pharmacy-search-input" 
+                placeholder="Search pharmacies..." 
+                class="pharmacy-search-input"
+              />
+            </div>
+            <div id="edit-pharmacy-access" class="pharmacy-checkbox-list">
+              <div class="loading-text">Loading pharmacies...</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-danger" id="delete-user-btn" style="margin-right: auto;">Delete User</button>
+            <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grant Pharmacy Access Modal -->
+  <div class="modal" id="grant-access-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Grant Pharmacy Access</h2>
+        <button class="modal-close" id="close-grant-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="grant-access-form">
+          <input type="hidden" id="grant-user-id" />
+          <div class="form-group">
+            <label for="grant-pharmacy-id">Pharmacy</label>
+            <select id="grant-pharmacy-id" name="pharmacy_id" required>
+              <option value="">Select a pharmacy...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="grant-can-read" name="can_read" checked />
+              <span>Read Access</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="grant-can-write" name="can_write" />
+              <span>Write Access</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-grant-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Grant Access</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert/Notification Container -->
+  <div id="alert-container" class="alert-container"></div>
+
+  <script>
+    // Styled Modal Functions (replace native alert, confirm, prompt)
+    function showStyledAlert(message, type, title) {
+      type = type || 'info';
+      title = title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information');
+      
+      var overlay = document.getElementById('alert-modal-overlay');
+      var iconEl = document.getElementById('alert-modal-icon');
+      var titleEl = document.getElementById('alert-modal-title');
+      var messageEl = document.getElementById('alert-modal-message');
+      var okBtn = document.getElementById('alert-modal-ok');
+      var closeBtn = document.getElementById('alert-modal-close');
+      
+      // Set icon based on type
+      iconEl.className = 'styled-modal-icon ' + type;
+      var iconSvg = '';
+      if (type === 'success') {
+        iconSvg = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+      } else if (type === 'error') {
+        iconSvg = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+      } else if (type === 'warning') {
+        iconSvg = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+      } else {
+        iconSvg = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+      }
+      iconEl.innerHTML = iconSvg;
+      
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      
+      overlay.style.display = 'flex';
+      
+      return new Promise(function(resolve) {
+        function close() {
+          overlay.style.display = 'none';
+          resolve();
+        }
+        
+        okBtn.onclick = close;
+        closeBtn.onclick = close;
+        
+        overlay.onclick = function(e) {
+          if (e.target === overlay) {
+            close();
+          }
+        };
+        
+        var escapeHandler = function(e) {
+          if (e.key === 'Escape') {
+            close();
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        };
+        document.addEventListener('keydown', escapeHandler);
+      });
+    }
+    
+    function showStyledConfirm(message, title) {
+      title = title || 'Confirm';
+      
+      var overlay = document.getElementById('confirm-modal-overlay');
+      var iconEl = document.getElementById('confirm-modal-icon');
+      var titleEl = document.getElementById('confirm-modal-title');
+      var messageEl = document.getElementById('confirm-modal-message');
+      var okBtn = document.getElementById('confirm-modal-ok');
+      var cancelBtn = document.getElementById('confirm-modal-cancel');
+      var closeBtn = document.getElementById('confirm-modal-close');
+      
+      iconEl.className = 'styled-modal-icon confirm';
+      iconEl.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+      
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      
+      overlay.style.display = 'flex';
+      
+      return new Promise(function(resolve) {
+        function close(result) {
+          overlay.style.display = 'none';
+          resolve(result);
+        }
+        
+        okBtn.onclick = function() { close(true); };
+        cancelBtn.onclick = function() { close(false); };
+        closeBtn.onclick = function() { close(false); };
+        
+        overlay.onclick = function(e) {
+          if (e.target === overlay) {
+            close(false);
+          }
+        };
+        
+        var escapeHandler = function(e) {
+          if (e.key === 'Escape') {
+            close(false);
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        };
+        document.addEventListener('keydown', escapeHandler);
+      });
+    }
+    
+    function showStyledPrompt(message, defaultValue, title) {
+      title = title || 'Input Required';
+      defaultValue = defaultValue || '';
+      
+      var overlay = document.getElementById('prompt-modal-overlay');
+      var iconEl = document.getElementById('prompt-modal-icon');
+      var titleEl = document.getElementById('prompt-modal-title');
+      var messageEl = document.getElementById('prompt-modal-message');
+      var inputEl = document.getElementById('prompt-modal-input');
+      var okBtn = document.getElementById('prompt-modal-ok');
+      var cancelBtn = document.getElementById('prompt-modal-cancel');
+      var closeBtn = document.getElementById('prompt-modal-close');
+      
+      iconEl.className = 'styled-modal-icon info';
+      iconEl.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+      
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+      inputEl.value = defaultValue;
+      
+      overlay.style.display = 'flex';
+      
+      setTimeout(function() {
+        inputEl.focus();
+        inputEl.select();
+      }, 100);
+      
+      return new Promise(function(resolve) {
+        function close(result) {
+          overlay.style.display = 'none';
+          resolve(result);
+        }
+        
+        function handleOk() {
+          close(inputEl.value);
+        }
+        
+        okBtn.onclick = handleOk;
+        cancelBtn.onclick = function() { close(null); };
+        closeBtn.onclick = function() { close(null); };
+        
+        inputEl.onkeydown = function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleOk();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            close(null);
+          }
+        };
+        
+        overlay.onclick = function(e) {
+          if (e.target === overlay) {
+            close(null);
+          }
+        };
+        
+        var escapeHandler = function(e) {
+          if (e.key === 'Escape') {
+            close(null);
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        };
+        document.addEventListener('keydown', escapeHandler);
+      });
+    }
+    
+    // Replace native alert, confirm, prompt
+    window.alert = function(message) {
+      return showStyledAlert(message, 'info');
+    };
+    
+    window.confirm = function(message) {
+      return showStyledConfirm(message);
+    };
+    
+    window.prompt = function(message, defaultValue) {
+      return showStyledPrompt(message, defaultValue);
+    };
+
+    // Store current session user ID to prevent self-deactivation
+    {% if user_id %}
+    window.currentSessionUserId = {{ user_id }};
+    {% else %}
+    window.currentSessionUserId = null;
+    {% endif %}
+    
+    // Admin Service - uses backend proxy endpoints
+    const AdminService = {
+      async listUsers() {
+        const response = await fetch('/api/admin/users', {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          this.checkResponse(response);
+        }
+        return await response.json();
+      },
+
+      async getUserDetails(userId) {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          if (response.status === 422) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `User ${userId} not found or invalid`);
+          }
+          this.checkResponse(response);
+        }
+        return await response.json();
+      },
+
+      async createUser(userData) {
+        const response = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            username: userData.username,
+            password: userData.password,
+            pharmacy_ids: userData.pharmacyIds || null,
+            can_write: userData.canWrite || false
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Request failed: ${response.status}`);
+        }
+        return await response.json();
+      },
+
+      async updateUser(userId, updates) {
+        const body = {};
+        if (updates.username) body.username = updates.username;
+        if (updates.password) body.password = updates.password;
+        if (updates.isActive !== undefined) body.is_active = updates.isActive;
+        
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Request failed: ${response.status}`);
+        }
+        return await response.json();
+      },
+
+      async grantPharmacyAccess(userId, pharmacyId, canRead = true, canWrite = false) {
+        const response = await fetch(`/api/admin/users/${userId}/pharmacies`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            pharmacy_id: pharmacyId,
+            can_read: canRead,
+            can_write: canWrite
+          })
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Request failed: ${response.status}`);
+        }
+        return await response.json();
+      },
+
+      async revokePharmacyAccess(userId, pharmacyId) {
+        const response = await fetch(`/api/admin/users/${userId}/pharmacies/${pharmacyId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Request failed: ${response.status}`);
+        }
+        return await response.json();
+      },
+
+      async getUserPharmacies(userId) {
+        // WORKAROUND: The backend doesn't support GET /admin/users/{id}/pharmacies yet
+        // So we fetch all users and extract pharmacy data from the list
+        try {
+          const users = await this.listUsers();
+          const user = users.find(u => u.user_id === userId);
+          if (!user) {
+            return [];
+          }
+          // The user list doesn't include detailed pharmacy data, just count
+          // We need to use getUserDetails which may have pharmacy array
+          try {
+            const userDetails = await this.getUserDetails(userId);
+            return userDetails.pharmacies || [];
+          } catch (e) {
+            // If getUserDetails fails (422), return empty - user can still manage access
+            console.warn(`Cannot fetch details for user ${userId}, returning empty pharmacies`);
+            return [];
+          }
+        } catch (e) {
+          console.error('Failed to fetch user pharmacies:', e);
+          return [];
+        }
+      },
+
+      async deleteUser(userId) {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Request failed: ${response.status}`);
+        }
+        return await response.json();
+      },
+
+      async listPharmacies() {
+        const response = await fetch('/api/admin/pharmacies', {
+          credentials: 'include'
+        });
+        if (!response.ok) {
+          this.checkResponse(response);
+        }
+        return await response.json();
+      },
+
+      checkResponse(response) {
+        if (response.status === 401) {
+          console.error('401 Unauthorized - redirecting to login');
+          // Don't redirect immediately, let user see the error
+          throw new Error('Unauthorized. Please log in again.');
+        }
+        if (response.status === 403) {
+          console.error('403 Forbidden - access denied');
+          throw new Error('Access denied. Only Charl can access admin panel.');
+        }
+        if (!response.ok) {
+          console.error(`Request failed with status ${response.status}`);
+          throw new Error(`Request failed: ${response.status}`);
+        }
+      }
+    };
+
+    // UI Functions
+    function showAlert(message, type = 'error') {
+      const container = document.getElementById('alert-container');
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      container.appendChild(alert);
+      setTimeout(() => alert.remove(), 5000);
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    }
+
+    function formatDateTime(dateString) {
+      if (!dateString) return 'Never';
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    async function loadUsers() {
+      const tbody = document.getElementById('users-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Loading users...</td></tr>';
+      
+      try {
+        console.log('Fetching users from /api/admin/users...');
+        const users = await AdminService.listUsers();
+        console.log('Users loaded:', users);
+        console.log('First user structure:', users[0]);
+        
+        // Store users globally for reference in edit modal
+        window.allUsers = users;
+        
+        if (users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">No users found</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = users.map(user => `
+          <tr>
+            <td>${user.user_id}</td>
+            <td>${user.username}</td>
+            <td>
+              <span class="badge ${user.is_active ? 'badge-success' : 'badge-danger'}">
+                ${user.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+            <td>${user.pharmacy_count || 0}</td>
+            <td>${formatDate(user.created_at)}</td>
+            <td class="actions-cell">
+              <button class="btn btn-sm btn-secondary" onclick="editUser(${user.user_id})">Edit</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading users:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function editUser(userId) {
+      const modal = document.getElementById('edit-user-modal');
+      document.getElementById('edit-user-id').value = userId;
+      const pharmacyAccessDiv = document.getElementById('edit-pharmacy-access');
+      pharmacyAccessDiv.innerHTML = '<div class="loading-text">Loading user details...</div>';
+      
+      // Clear search input
+      const searchInput = document.getElementById('pharmacy-search-input');
+      searchInput.value = '';
+      
+      // Find user from the list first (fallback if details endpoint fails)
+      let userFromList = null;
+      try {
+        const users = await AdminService.listUsers();
+        userFromList = users.find(u => u.user_id === userId);
+      } catch (e) {
+        console.error('Could not load users list:', e);
+      }
+      
+      try {
+        let user;
+        try {
+          user = await AdminService.getUserDetails(userId);
+          console.log('Got user details from API:', user);
+        } catch (error) {
+          // If getting user details fails, try to get pharmacy info from list
+          if (userFromList) {
+            console.warn(`Could not fetch user details for ${userId}, using list data`);
+            console.log('User from list:', userFromList);
+            // Check if the list data includes pharmacies
+            user = {
+              user_id: userId,
+              username: userFromList.username,
+              is_active: userFromList.is_active,
+              pharmacies: userFromList.pharmacies || [] // Try to use pharmacies from list if available
+            };
+          } else {
+            throw error;
+          }
+        }
+        
+        document.getElementById('edit-username').value = user.username || '';
+        document.getElementById('edit-is-active').checked = user.is_active;
+        document.getElementById('edit-password').value = '';
+        
+        // Load all pharmacies and user's current assignments
+        const pharmacies = await AdminService.listPharmacies();
+        console.log('All pharmacies:', pharmacies);
+        
+        let userAssignments = [];
+        try {
+          userAssignments = await AdminService.getUserPharmacies(userId);
+          if (!Array.isArray(userAssignments) && userAssignments && Array.isArray(userAssignments.pharmacies)) {
+            userAssignments = userAssignments.pharmacies;
+          }
+          console.log('User pharmacy assignments from API:', userAssignments);
+        } catch (assignmentError) {
+          console.warn('Failed to fetch pharmacy assignments, falling back to user object', assignmentError);
+        }
+        
+        const assignmentSource = (Array.isArray(userAssignments) && userAssignments.length > 0)
+          ? userAssignments
+          : (user.pharmacies || []);
+        console.log('Building userPharmacies from source:', assignmentSource);
+        const userPharmacies = buildUserPharmacyMap(assignmentSource);
+        console.log('Final userPharmacies object:', userPharmacies);
+        
+        // Store pharmacies data for search/filter
+        window.currentEditPharmacies = pharmacies.filter(p => p.is_active !== false);
+        window.currentEditUserPharmacies = userPharmacies;
+        window.currentEditUserId = userId;
+        
+        // Render pharmacy checkboxes
+        renderPharmacyCheckboxes(window.currentEditPharmacies, userPharmacies);
+        
+        // Setup search functionality (remove old listeners first)
+        const newSearchInput = document.getElementById('pharmacy-search-input');
+        newSearchInput.replaceWith(newSearchInput.cloneNode(true));
+        const freshSearchInput = document.getElementById('pharmacy-search-input');
+        freshSearchInput.addEventListener('input', (e) => {
+          const searchTerm = e.target.value.toLowerCase();
+          const filtered = window.currentEditPharmacies.filter(p => {
+            const pharmacyName = extractPharmacyName(p).toLowerCase();
+            return pharmacyName.includes(searchTerm);
+          });
+          renderPharmacyCheckboxes(filtered, window.currentEditUserPharmacies);
+        });
+        
+        modal.style.display = 'flex';
+      } catch (error) {
+        pharmacyAccessDiv.innerHTML = `<div class="error-text">Error: ${error.message}</div>`;
+        showAlert(error.message, 'error');
+        // Still show modal with basic info if we have it from list
+        if (userFromList) {
+          document.getElementById('edit-username').value = userFromList.username || '';
+          document.getElementById('edit-is-active').checked = userFromList.is_active;
+          document.getElementById('edit-password').value = '';
+          modal.style.display = 'flex';
+        }
+      }
+    }
+    
+    async function deleteUser(userId) {
+      const username = await prompt('Type the username to confirm deletion:');
+      if (!username) {
+        return;
+      }
+      
+      // Verify username matches
+      try {
+        const users = await AdminService.listUsers();
+        const user = users.find(u => u.user_id === userId);
+        if (!user || user.username !== username) {
+          showAlert('Username does not match. Deletion cancelled.', 'error');
+          return;
+        }
+      } catch (error) {
+        showAlert('Could not verify user. Deletion cancelled.', 'error');
+        return;
+      }
+      
+      const confirmed = await confirm(`Are you sure you want to permanently delete user "${username}"? This action cannot be undone.`);
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        await AdminService.deleteUser(userId);
+        showAlert('User deleted successfully', 'success');
+        document.getElementById('edit-user-modal').style.display = 'none';
+        loadUsers(); // Refresh users list
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+    
+    function extractPharmacyId(pharmacy) {
+      return pharmacy?.pharmacy_id ?? pharmacy?.id ?? pharmacy?.pharmacyId ?? pharmacy?.store_id ?? null;
+    }
+    
+    function extractPharmacyName(pharmacy) {
+      const name = pharmacy?.name || pharmacy?.pharmacy_name || pharmacy?.store_name || pharmacy?.display_name;
+      const fallback = extractPharmacyId(pharmacy);
+      return (name || (fallback ? `Pharmacy ${fallback}` : 'Unnamed Pharmacy'));
+    }
+    
+    function buildUserPharmacyMap(pharmaciesList) {
+      const map = {};
+      if (!Array.isArray(pharmaciesList)) {
+        return map;
+      }
+      
+      pharmaciesList.forEach(ph => {
+        const phId = extractPharmacyId(ph);
+        if (!phId) {
+          return;
+        }
+        const canRead = ph.can_read ?? ph.read_access ?? ph.read ?? true;
+        if (canRead) {
+          map[phId] = {
+            can_read: true,
+            can_write: ph.can_write ?? ph.write_access ?? ph.write ?? false
+          };
+        }
+      });
+      return map;
+    }
+    
+    async function refreshCurrentEditPharmacies() {
+      // DEPRECATED: Backend doesn't support GET /admin/users/{id}/pharmacies
+      // We track state locally in window.currentEditUserPharmacies instead
+      // This function is kept for compatibility but does nothing
+      console.warn('refreshCurrentEditPharmacies called but backend does not support fetching pharmacy assignments');
+    }
+    
+    function renderPharmacyCheckboxes(pharmacies, userPharmacies) {
+      const container = document.getElementById('edit-pharmacy-access');
+      
+      if (pharmacies.length === 0) {
+        container.innerHTML = '<p class="empty-text">No pharmacies found</p>';
+        return;
+      }
+      
+      container.innerHTML = pharmacies.map(pharmacy => {
+        const phId = extractPharmacyId(pharmacy);
+        if (!phId) {
+          return '';
+        }
+        const hasAccess = userPharmacies && userPharmacies[phId];
+        const isChecked = !!hasAccess;
+        const canRead = hasAccess ? (hasAccess.can_read !== false) : false;
+        const canWrite = hasAccess ? (hasAccess.can_write === true) : false;
+        const displayName = extractPharmacyName(pharmacy);
+        
+        return `
+          <div class="pharmacy-checkbox-item" data-pharmacy-id="${phId}">
+            <label class="pharmacy-checkbox-label">
+              <input 
+                type="checkbox" 
+                class="pharmacy-access-checkbox"
+                data-pharmacy-id="${phId}"
+                ${isChecked ? 'checked' : ''}
+              />
+              <span class="pharmacy-checkbox-name">${displayName}</span>
+            </label>
+            ${isChecked ? `
+              <div class="pharmacy-permissions-controls">
+                <label class="checkbox-label-small">
+                  <input 
+                    type="checkbox" 
+                    class="pharmacy-read-checkbox"
+                    data-pharmacy-id="${phId}"
+                    ${canRead ? 'checked' : ''}
+                    ${!canRead ? 'disabled' : ''}
+                  />
+                  <span>Read</span>
+                </label>
+                <label class="checkbox-label-small">
+                  <input 
+                    type="checkbox" 
+                    class="pharmacy-write-checkbox"
+                    data-pharmacy-id="${phId}"
+                    ${canWrite ? 'checked' : ''}
+                    ${!canRead ? 'disabled' : ''}
+                  />
+                  <span>Write</span>
+                </label>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      // Attach event listeners for main access checkbox
+      container.querySelectorAll('.pharmacy-access-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', async (e) => {
+          const pharmacyId = parseInt(e.target.dataset.pharmacyId);
+          const isChecked = e.target.checked;
+          
+          if (isChecked) {
+            // Grant access - read only by default
+            try {
+              console.log(`Granting pharmacy ${pharmacyId} access to user ${window.currentEditUserId}`);
+              const result = await AdminService.grantPharmacyAccess(window.currentEditUserId, pharmacyId, true, false);
+              console.log('Grant result:', result);
+              
+              // Update local state  
+              window.currentEditUserPharmacies[pharmacyId] = { can_read: true, can_write: false };
+              console.log('Updated currentEditUserPharmacies:', window.currentEditUserPharmacies);
+              
+              // Re-render to show read/write checkboxes
+              renderPharmacyCheckboxes(window.currentEditPharmacies, window.currentEditUserPharmacies);
+              
+              showAlert('Pharmacy access granted', 'success');
+              
+              // Refresh user list to update pharmacy count
+              await loadUsers();
+            } catch (error) {
+              console.error('Error granting access:', error);
+              e.target.checked = false;
+              showAlert(error.message, 'error');
+            }
+          } else {
+            // Revoke access
+            const confirmed = await confirm('Remove access to this pharmacy?');
+            if (confirmed) {
+              try {
+                console.log(`Revoking pharmacy ${pharmacyId} access from user ${window.currentEditUserId}`);
+                const result = await AdminService.revokePharmacyAccess(window.currentEditUserId, pharmacyId);
+                console.log('Revoke result:', result);
+                
+                // Update local state
+                delete window.currentEditUserPharmacies[pharmacyId];
+                console.log('Updated currentEditUserPharmacies:', window.currentEditUserPharmacies);
+                
+                // Re-render to hide read/write checkboxes
+                renderPharmacyCheckboxes(window.currentEditPharmacies, window.currentEditUserPharmacies);
+                
+                showAlert('Pharmacy access removed', 'success');
+                
+                // Refresh user list to update pharmacy count
+                await loadUsers();
+              } catch (error) {
+                console.error('Error revoking access:', error);
+                e.target.checked = true;
+                showAlert(error.message, 'error');
+              }
+            } else {
+              e.target.checked = true;
+            }
+          }
+        });
+      });
+      
+      // Attach event listeners for read checkbox
+      container.querySelectorAll('.pharmacy-read-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', async (e) => {
+          const pharmacyId = parseInt(e.target.dataset.pharmacyId);
+          const canRead = e.target.checked;
+          // If unchecking read, also uncheck write (write requires read)
+          const canWrite = canRead ? (window.currentEditUserPharmacies[pharmacyId]?.can_write || false) : false;
+          
+          try {
+            console.log(`Updating pharmacy ${pharmacyId} access: read=${canRead}, write=${canWrite}`);
+            const result = await AdminService.grantPharmacyAccess(window.currentEditUserId, pharmacyId, canRead, canWrite);
+            console.log('Update result:', result);
+            
+            // Update local state
+            if (canRead) {
+              window.currentEditUserPharmacies[pharmacyId] = { can_read: true, can_write: canWrite };
+            } else {
+              // If read is unchecked, remove access entirely
+              await AdminService.revokePharmacyAccess(window.currentEditUserId, pharmacyId);
+              delete window.currentEditUserPharmacies[pharmacyId];
+            }
+            
+            // Re-render to update checkboxes state
+            renderPharmacyCheckboxes(window.currentEditPharmacies, window.currentEditUserPharmacies);
+            
+            showAlert('Pharmacy access updated', 'success');
+            await loadUsers();
+          } catch (error) {
+            console.error('Error updating read access:', error);
+            e.target.checked = !canRead;
+            showAlert(error.message, 'error');
+          }
+        });
+      });
+      
+      // Attach event listeners for write checkbox
+      container.querySelectorAll('.pharmacy-write-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', async (e) => {
+          const pharmacyId = parseInt(e.target.dataset.pharmacyId);
+          const canWrite = e.target.checked;
+          const canRead = window.currentEditUserPharmacies[pharmacyId]?.can_read !== false;
+          
+          // Write access requires read access
+          if (canWrite && !canRead) {
+            e.target.checked = false;
+            showAlert('Write access requires read access', 'error');
+            return;
+          }
+          
+          try {
+            console.log(`Updating pharmacy ${pharmacyId} access: read=${canRead}, write=${canWrite}`);
+            const result = await AdminService.grantPharmacyAccess(window.currentEditUserId, pharmacyId, canRead, canWrite);
+            console.log('Update result:', result);
+            
+            // Update local state
+            window.currentEditUserPharmacies[pharmacyId] = { can_read: canRead, can_write: canWrite };
+            
+            showAlert('Pharmacy access updated', 'success');
+            await loadUsers();
+          } catch (error) {
+            console.error('Error updating write access:', error);
+            e.target.checked = !canWrite;
+            showAlert(error.message, 'error');
+          }
+        });
+      });
+    }
+    
+    async function revokeAccessFromEdit(userId, pharmacyId) {
+      const confirmed = await confirm('Are you sure you want to remove this pharmacy access?');
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        await AdminService.revokePharmacyAccess(userId, pharmacyId);
+        showAlert('Pharmacy access removed successfully', 'success');
+        editUser(userId); // Refresh the edit modal
+        loadUsers(); // Refresh users list
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function grantAccess(userId) {
+      const modal = document.getElementById('grant-access-modal');
+      document.getElementById('grant-user-id').value = userId;
+      document.getElementById('grant-can-read').checked = true;
+      document.getElementById('grant-can-write').checked = false;
+      
+      try {
+        const pharmacies = await AdminService.listPharmacies();
+        const select = document.getElementById('grant-pharmacy-id');
+        select.innerHTML = '<option value="">Select a pharmacy...</option>' +
+          pharmacies
+            .filter(p => p.is_active !== false)
+            .map(p => {
+              const displayName = extractPharmacyName(p);
+              const phId = extractPharmacyId(p);
+              return `<option value="${phId}">${displayName}</option>`;
+            })
+            .join('');
+        modal.style.display = 'flex';
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function revokeAccess(userId, pharmacyId) {
+      const confirmed = await confirm('Are you sure you want to revoke this pharmacy access?');
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        await AdminService.revokePharmacyAccess(userId, pharmacyId);
+        showAlert('Pharmacy access revoked successfully', 'success');
+        loadUsers(); // Refresh users list
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    // Event Listeners
+    document.getElementById('create-user-btn').addEventListener('click', async () => {
+      const modal = document.getElementById('create-user-modal');
+      const checkboxes = document.getElementById('pharmacy-checkboxes');
+      
+      try {
+        const pharmacies = await AdminService.listPharmacies();
+        checkboxes.innerHTML = pharmacies
+          .filter(p => p.is_active !== false)
+          .map(p => {
+            const displayName = extractPharmacyName(p);
+            const phId = extractPharmacyId(p);
+            return `
+              <label class="checkbox-label">
+                <input type="checkbox" name="pharmacy_ids" value="${phId}" />
+                <span>${displayName}</span>
+              </label>
+            `;
+          }).join('');
+        modal.style.display = 'flex';
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const pharmacyCheckboxes = document.querySelectorAll('input[name="pharmacy_ids"]:checked');
+      
+      try {
+        await AdminService.createUser({
+          username: formData.get('username'),
+          password: formData.get('password'),
+          pharmacyIds: Array.from(pharmacyCheckboxes).map(cb => parseInt(cb.value)),
+          canWrite: false // Always read-only access
+        });
+        showAlert('User created successfully', 'success');
+        document.getElementById('create-user-modal').style.display = 'none';
+        e.target.reset();
+        loadUsers();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+
+    document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = parseInt(document.getElementById('edit-user-id').value);
+      const formData = new FormData(e.target);
+      
+      const updates = {};
+      if (formData.get('username')) updates.username = formData.get('username');
+      if (formData.get('password')) updates.password = formData.get('password');
+      // Always send isActive to ensure account status is preserved/updated
+      updates.isActive = document.getElementById('edit-is-active').checked;
+      
+      // Safety check: Prevent deactivating the current logged-in user
+      const currentUserId = parseInt(document.getElementById('edit-user-id').value);
+      const currentSessionUserId = window.currentSessionUserId || null;
+      if (currentUserId === currentSessionUserId && !updates.isActive) {
+        showAlert('Cannot deactivate your own account while logged in', 'error');
+        return;
+      }
+      
+      try {
+        await AdminService.updateUser(userId, updates);
+        showAlert('User updated successfully', 'success');
+        document.getElementById('edit-user-modal').style.display = 'none';
+        loadUsers();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+    
+
+    document.getElementById('grant-access-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = parseInt(document.getElementById('grant-user-id').value);
+      const pharmacyId = parseInt(document.getElementById('grant-pharmacy-id').value);
+      const canRead = document.getElementById('grant-can-read').checked;
+      const canWrite = document.getElementById('grant-can-write').checked;
+      
+      try {
+        await AdminService.grantPharmacyAccess(userId, pharmacyId, canRead, canWrite);
+        showAlert('Pharmacy access granted successfully', 'success');
+        document.getElementById('grant-access-modal').style.display = 'none';
+        loadUsers();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+
+    // Modal close handlers
+    document.getElementById('close-create-modal').addEventListener('click', () => {
+      document.getElementById('create-user-modal').style.display = 'none';
+    });
+    document.getElementById('cancel-create-btn').addEventListener('click', () => {
+      document.getElementById('create-user-modal').style.display = 'none';
+    });
+    
+    document.getElementById('close-edit-modal').addEventListener('click', () => {
+      document.getElementById('edit-user-modal').style.display = 'none';
+    });
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      document.getElementById('edit-user-modal').style.display = 'none';
+    });
+    
+    document.getElementById('delete-user-btn').addEventListener('click', async () => {
+      const userId = parseInt(document.getElementById('edit-user-id').value);
+      if (userId) {
+        await deleteUser(userId);
+      }
+    });
+    
+    document.getElementById('close-grant-modal').addEventListener('click', () => {
+      document.getElementById('grant-access-modal').style.display = 'none';
+    });
+    document.getElementById('cancel-grant-btn').addEventListener('click', () => {
+      document.getElementById('grant-access-modal').style.display = 'none';
+    });
+
+    document.getElementById('refresh-users-btn').addEventListener('click', loadUsers);
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+      const modals = ['create-user-modal', 'edit-user-modal', 'grant-access-modal'];
+      modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    });
+
+    // Initialize
+    // Note: In a real implementation, you'd need to get the auth token from the backend
+    // For now, we'll need to create backend proxy endpoints
+    loadUsers();
+  </script>
+</body>
+</html>
+

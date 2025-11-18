@@ -16,6 +16,7 @@ services:
         generateValue: true  # Render will generate a secure key
       - key: PYTHON_VERSION
         value: 3.11.0
+    runtime: python-3.11.0
 
 databases:
   - name: pharmasight-db

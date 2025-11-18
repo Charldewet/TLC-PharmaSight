@@ -2778,15 +2778,18 @@
         var isApiCall = url && (url.startsWith('/api/') || url.includes('/api/'));
         
         // Exclude stock query endpoints from showing loading modal
+        // These endpoints are used on the stock-queries screen and have their own loading indicators
         var isStockQueryEndpoint = false;
         if (isApiCall && url) {
           // Check if this is a stock query related endpoint
+          // Match patterns: /api/products/search, /api/products/{code}/stock, /api/products/{code}/sales
+          // /api/negative-stock, /api/stock-value
           isStockQueryEndpoint = (
-            url.includes('/api/products/search') ||
-            url.includes('/api/products/') && url.includes('/stock') ||
-            url.includes('/api/products/') && url.includes('/sales') ||
-            url.includes('/api/negative-stock') ||
-            url.includes('/api/stock-value')
+            url.indexOf('/api/products/search') !== -1 ||
+            (url.indexOf('/api/products/') !== -1 && url.indexOf('/stock') !== -1) ||
+            (url.indexOf('/api/products/') !== -1 && url.indexOf('/sales') !== -1) ||
+            url.indexOf('/api/negative-stock') !== -1 ||
+            url.indexOf('/api/stock-value') !== -1
           );
         }
         

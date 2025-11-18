@@ -115,7 +115,6 @@ body::before {
   overflow: visible !important;
   overflow-y: hidden !important;
   width: 100% !important;
-  padding: 20px;
   padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); /* Account for safe areas */
   gap: 20px;
   position: relative;
@@ -126,7 +125,6 @@ body::before {
 /* Mobile-specific adjustments */
 @media (max-width: 768px) {
   .app-layout {
-    padding: 10px;
     padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     gap: 10px;
     height: 100dvh !important;

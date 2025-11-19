@@ -5715,33 +5715,6 @@ select.control-lg option {
   }
 }
 
-/* Tablet-specific fixes for browser UI (769px - 1024px) */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .sidebar {
-    /* Account for browser UI on tablets: typically less than phones but still present */
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  
-  .sidebar-header {
-    flex-shrink: 0 !important;
-  }
-  
-  .sidebar-nav {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-  }
-  
-  .sidebar-footer {
-    flex-shrink: 0 !important;
-    margin-top: auto !important;
-  }
-}
-
 @media (max-width: 768px) {
   .app-layout {
     padding: 0;
@@ -5769,22 +5742,6 @@ select.control-lg option {
     -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
     display: flex !important;
     flex-direction: column !important;
-  }
-  
-  /* For smaller mobile devices, use even more conservative height */
-  @media (max-width: 480px) {
-    .sidebar {
-      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    }
-  }
-  
-  /* For tablets in portrait mode */
-  @media (min-width: 481px) and (max-width: 768px) {
-    .sidebar {
-      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    }
   }
   
   .sidebar.open {
@@ -8232,22 +8189,6 @@ body.admin-page .main-content {
     margin-top: auto !important;
   }
   
-  /* For smaller mobile devices, use even more conservative height */
-  @media (max-width: 480px) {
-    .sidebar {
-      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    }
-  }
-  
-  /* For tablets in portrait mode */
-  @media (min-width: 481px) and (max-width: 768px) {
-    .sidebar {
-      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    }
-  }
-  
   .main-content {
     height: 100%;
     height: 100dvh;
@@ -8259,6 +8200,49 @@ body.admin-page .main-content {
     max-height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+}
+
+/* Device-specific sidebar viewport adjustments
+   Base offsets assume:
+   - Phone UI chrome (address bar + tabs + gesture area) ≈ 160-180px
+   - Tablet portrait chrome ≈ 140px
+   - Tablet landscape chrome ≈ 100px
+   These values keep the footer visible while allowing the nav area to scroll
+   while still respecting safe-area insets. */
+@media (max-width: 480px) {
+  .sidebar {
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    min-height: auto !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .sidebar {
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    min-height: auto !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    min-height: auto !important;
   }
 }
 

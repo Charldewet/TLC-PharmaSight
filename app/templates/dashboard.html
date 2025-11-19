@@ -11,25 +11,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <script>
-    (function () {
-      const docEl = document.documentElement;
-      const updateViewportHeight = () => {
-        const viewport = window.visualViewport || window;
-        const height = viewport && viewport.height ? viewport.height : window.innerHeight;
-        if (height) {
-          docEl.style.setProperty('--viewport-height', height + 'px');
-        }
-      };
-      updateViewportHeight();
-      const events = ['resize', 'orientationchange', 'focus'];
-      events.forEach(evt => window.addEventListener(evt, updateViewportHeight));
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateViewportHeight);
-        window.visualViewport.addEventListener('orientationchange', updateViewportHeight);
-      }
-    })();
-  </script>
   <!-- Subtle SVG Filters for Refined Glass Effect -->
   <svg width="0" height="0" style="position: absolute; pointer-events: none;">
     <defs>
@@ -11008,7 +10989,7 @@
       }
       
       // Group View Toggle Functionality
-      var groupViewEnabled = false;
+      var groupViewEnabled = true; // Default to group view enabled
       const groupViewToggle = document.getElementById('group-view-toggle-btn');
       const groupViewContainer = document.getElementById('group-view-container');
       const singlePharmacyView = document.getElementById('single-pharmacy-view');
@@ -11593,51 +11574,64 @@
         }
       }
       
+      // Function to enable/disable group view UI
+      function updateGroupViewUI() {
+        if (groupViewEnabled) {
+          // Show group view, hide single view
+          if (groupViewContainer) groupViewContainer.style.display = 'block';
+          if (singlePharmacyView) singlePharmacyView.style.display = 'none';
+          
+          // Hide spend analytics section in group view
+          const spendAnalyticsSection = document.getElementById('spend-analytics-section');
+          if (spendAnalyticsSection) {
+            spendAnalyticsSection.style.display = 'none';
+          }
+          
+          // Ensure grid is visible
+          if (groupViewGrid) {
+            groupViewGrid.style.display = 'grid';
+          }
+          
+          // Generate metric cards if not already generated
+          if (groupViewGrid && groupViewGrid.children.length === 0) {
+            const pharmacies = getPharmaciesList();
+            console.log('Group View: Found', pharmacies.length, 'pharmacies');
+            if (pharmacies.length === 0) {
+              console.warn('Group View: No pharmacies found in modal');
+            }
+            groupViewGrid.insertAdjacentHTML('beforeend', generateGroupViewCards());
+          }
+          
+          // Load data for all pharmacies
+          loadGroupViewData();
+        } else {
+          // Show single view, hide group view
+          if (groupViewContainer) groupViewContainer.style.display = 'none';
+          if (singlePharmacyView) singlePharmacyView.style.display = 'block';
+          
+          // Show spend analytics section in single view
+          const spendAnalyticsSection = document.getElementById('spend-analytics-section');
+          if (spendAnalyticsSection) {
+            spendAnalyticsSection.style.display = 'block';
+          }
+        }
+        
+        // Update button active state
+        if (groupViewToggle) {
+          groupViewToggle.classList.toggle('active', groupViewEnabled);
+        }
+      }
+      
       if (groupViewToggle && groupViewContainer && singlePharmacyView) {
         groupViewToggle.addEventListener('click', function() {
           groupViewEnabled = !groupViewEnabled;
-          groupViewToggle.classList.toggle('active', groupViewEnabled);
-          
-          if (groupViewEnabled) {
-            // Show group view, hide single view
-            groupViewContainer.style.display = 'block';
-            singlePharmacyView.style.display = 'none';
-            
-            // Hide spend analytics section in group view
-            const spendAnalyticsSection = document.getElementById('spend-analytics-section');
-            if (spendAnalyticsSection) {
-              spendAnalyticsSection.style.display = 'none';
-            }
-            
-            // Ensure grid is visible
-            if (groupViewGrid) {
-              groupViewGrid.style.display = 'grid';
-            }
-            
-            // Generate metric cards if not already generated
-            if (groupViewGrid && groupViewGrid.children.length === 0) {
-              const pharmacies = getPharmaciesList();
-              console.log('Group View: Found', pharmacies.length, 'pharmacies');
-              if (pharmacies.length === 0) {
-                console.warn('Group View: No pharmacies found in modal');
-              }
-              groupViewGrid.insertAdjacentHTML('beforeend', generateGroupViewCards());
-            }
-            
-            // Load data for all pharmacies
-            loadGroupViewData();
-          } else {
-            // Show single view, hide group view
-            groupViewContainer.style.display = 'none';
-            singlePharmacyView.style.display = 'block';
-            
-            // Show spend analytics section in single view
-            const spendAnalyticsSection = document.getElementById('spend-analytics-section');
-            if (spendAnalyticsSection) {
-              spendAnalyticsSection.style.display = 'block';
-            }
-          }
+          updateGroupViewUI();
         });
+        
+        // Initialize group view on page load (after a short delay to ensure DOM is ready)
+        setTimeout(function() {
+          updateGroupViewUI();
+        }, 100);
       }
       
       // Debtor Tools Functions

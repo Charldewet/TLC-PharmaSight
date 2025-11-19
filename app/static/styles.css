@@ -52,6 +52,22 @@
   --chartOrange: #FF4509;
   --chartTeal: #10B981;
   --chartIndigo: #8B5CF6;
+  
+  /* Dynamic viewport helpers */
+  --viewport-height: 100vh;
+  --sidebar-viewport-offset: 40px;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --viewport-height: 100dvh;
+  }
+}
+
+@supports (height: 100svh) {
+  :root {
+    --viewport-height: 100svh;
+  }
 }
 
 * { 
@@ -110,8 +126,9 @@ body::before {
 .app-layout {
   display: flex !important;
   height: 100vh !important;
-  height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
+  height: var(--viewport-height, 100vh) !important;
   min-height: 100vh !important; /* Fallback for older browsers */
+  min-height: var(--viewport-height, 100vh) !important;
   overflow: visible !important;
   overflow-y: hidden !important;
   width: 100% !important;
@@ -134,6 +151,7 @@ body::before {
 
 /* Refined Glass Sidebar */
 .sidebar {
+  --sidebar-viewport-offset: 40px;
   width: 325px;
   min-width: 325px;
   background: rgba(255, 255, 255, 0.8);
@@ -147,7 +165,9 @@ body::before {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
   height: calc(100vh - 40px);
-  height: calc(100dvh - 40px); /* Dynamic viewport height for mobile */
+  height: calc(var(--viewport-height, 100vh) - var(--sidebar-viewport-offset, 40px));
+  height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 40px));
+  max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 40px));
   min-height: calc(100vh - 40px); /* Fallback */
   position: relative;
   box-shadow: 
@@ -5722,13 +5742,13 @@ select.control-lg option {
   }
   
   .sidebar {
+    --sidebar-viewport-offset: 160px;
     position: fixed !important;
     left: 20px !important;
     top: 20px !important;
-    /* Use max-height with conservative calculation to account for browser UI */
-    /* Account for browser UI: address bar (~56px) + tabs (~48px) + safe area + margins (~40px) = ~144px */
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
+    /* Use dynamic viewport helpers so the footer stays visible beneath browser UI */
+    max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 160px)) !important;
+    height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 160px)) !important;
     min-height: auto !important;
     transform: translateX(-120%) !important;
     z-index: 1003 !important; /* Higher than overlay */
@@ -5860,6 +5880,27 @@ select.control-lg option {
   
   .toolbar {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Fine-tune sidebar safe height per device */
+@media (max-width: 480px) {
+  .sidebar {
+    --sidebar-viewport-offset: 200px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .sidebar {
+    --sidebar-viewport-offset: 150px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    --sidebar-viewport-offset: 120px;
+    max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 120px)) !important;
+    height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 120px)) !important;
   }
 }
 
@@ -8200,49 +8241,6 @@ body.admin-page .main-content {
     max-height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  }
-}
-
-/* Device-specific sidebar viewport adjustments
-   Base offsets assume:
-   - Phone UI chrome (address bar + tabs + gesture area) ≈ 160-180px
-   - Tablet portrait chrome ≈ 140px
-   - Tablet landscape chrome ≈ 100px
-   These values keep the footer visible while allowing the nav area to scroll
-   while still respecting safe-area insets. */
-@media (max-width: 480px) {
-  .sidebar {
-    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
-    min-height: auto !important;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 768px) {
-  .sidebar {
-    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
-    min-height: auto !important;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .sidebar {
-    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    max-height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    min-height: auto !important;
   }
 }
 

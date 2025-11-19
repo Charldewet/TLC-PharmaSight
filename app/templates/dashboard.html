@@ -11,6 +11,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+  <script>
+    (function () {
+      const docEl = document.documentElement;
+      const updateViewportHeight = () => {
+        const viewport = window.visualViewport || window;
+        const height = viewport && viewport.height ? viewport.height : window.innerHeight;
+        if (height) {
+          docEl.style.setProperty('--viewport-height', height + 'px');
+        }
+      };
+      updateViewportHeight();
+      const events = ['resize', 'orientationchange', 'focus'];
+      events.forEach(evt => window.addEventListener(evt, updateViewportHeight));
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateViewportHeight);
+        window.visualViewport.addEventListener('orientationchange', updateViewportHeight);
+      }
+    })();
+  </script>
   <!-- Subtle SVG Filters for Refined Glass Effect -->
   <svg width="0" height="0" style="position: absolute; pointer-events: none;">
     <defs>

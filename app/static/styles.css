@@ -192,6 +192,7 @@ body::before {
   position: relative;
   z-index: 10;
   pointer-events: auto;
+  flex-shrink: 0; /* Prevent header from being compressed */
 }
 
 .sidebar-brand {
@@ -342,6 +343,7 @@ body::before {
   position: relative;
   z-index: 10;
   pointer-events: auto;
+  flex-shrink: 0; /* Prevent footer from being cut off */
 }
 
 .user-info {
@@ -2397,28 +2399,38 @@ select.control-lg option {
   #debtor-statistics-section,
   #debtor-table-section {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   /* Ensure debtor summary layout and cards are visible on mobile */
   .debtor-tools-container .debtor-summary-layout {
     display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   .debtor-tools-container .debtor-summary-layout > .dashboard-card,
   .debtor-tools-container .debtor-summary-layout > .debtor-overview-cards > .dashboard-card,
   .debtor-tools-container .debtor-ageing-card {
     display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   /* Ensure debtor table is visible */
+  #debtor-table-section .debtor-table-search-container,
   #debtor-table-section .debtor-table-container,
-  #debtor-table-section .debtor-table-wrapper,
-  #debtor-table-section .debtor-table {
+  #debtor-table-section .debtor-table-wrapper {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   #debtor-table-section .debtor-table {
     display: table !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 }
 
@@ -3385,6 +3397,34 @@ select.control-lg option {
   .debtor-tools-container .debtor-summary-layout > .debtor-overview-cards > .dashboard-card,
   .debtor-tools-container .debtor-ageing-card {
     display: flex !important;
+  }
+  
+  /* Ensure debtor table section and its contents remain visible on very small mobile */
+  #debtor-table-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  #debtor-table-section .debtor-table-search-container,
+  #debtor-table-section .debtor-table-container,
+  #debtor-table-section .debtor-table-wrapper {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  #debtor-table-section .debtor-table {
+    display: table !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Ensure debtor statistics section remains visible */
+  #debtor-statistics-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   .single-pharmacy-view .dashboard-combined-metrics-card {
@@ -5675,6 +5715,33 @@ select.control-lg option {
   }
 }
 
+/* Tablet-specific fixes for browser UI (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    /* Account for browser UI on tablets: typically less than phones but still present */
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .sidebar-header {
+    flex-shrink: 0 !important;
+  }
+  
+  .sidebar-nav {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  .sidebar-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+  }
+}
+
 @media (max-width: 768px) {
   .app-layout {
     padding: 0;
@@ -5685,7 +5752,11 @@ select.control-lg option {
     position: fixed !important;
     left: 20px !important;
     top: 20px !important;
-    height: calc(100vh - 40px) !important;
+    /* Use max-height with conservative calculation to account for browser UI */
+    /* Account for browser UI: address bar (~56px) + tabs (~48px) + safe area + margins (~40px) = ~144px */
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
+    min-height: auto !important;
     transform: translateX(-120%) !important;
     z-index: 1003 !important; /* Higher than overlay */
     border-radius: 20px;
@@ -5696,6 +5767,24 @@ select.control-lg option {
     background: rgba(255, 255, 255, 0.8) !important;
     backdrop-filter: blur(20px) saturate(150%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* For smaller mobile devices, use even more conservative height */
+  @media (max-width: 480px) {
+    .sidebar {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    }
+  }
+  
+  /* For tablets in portrait mode */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .sidebar {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    }
   }
   
   .sidebar.open {
@@ -8117,8 +8206,46 @@ body.admin-page .main-content {
   }
   
   .sidebar {
-    height: calc(100dvh - 20px) !important;
-    min-height: calc(100vh - 20px) !important;
+    /* Use max-height with conservative calculation to account for browser UI */
+    /* Account for browser UI: address bar (~56px) + tabs (~48px) + safe area + margins (~40px) = ~144px */
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .sidebar-header {
+    flex-shrink: 0 !important;
+  }
+  
+  .sidebar-nav {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
+  }
+  
+  .sidebar-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+  }
+  
+  /* For smaller mobile devices, use even more conservative height */
+  @media (max-width: 480px) {
+    .sidebar {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 180px) !important;
+    }
+  }
+  
+  /* For tablets in portrait mode */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .sidebar {
+      max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+      height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 140px) !important;
+    }
   }
   
   .main-content {

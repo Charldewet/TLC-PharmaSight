@@ -52,22 +52,6 @@
   --chartOrange: #FF4509;
   --chartTeal: #10B981;
   --chartIndigo: #8B5CF6;
-  
-  /* Dynamic viewport helpers */
-  --viewport-height: 100vh;
-  --sidebar-viewport-offset: 40px;
-}
-
-@supports (height: 100dvh) {
-  :root {
-    --viewport-height: 100dvh;
-  }
-}
-
-@supports (height: 100svh) {
-  :root {
-    --viewport-height: 100svh;
-  }
 }
 
 * { 
@@ -80,7 +64,7 @@
 
 html, body { 
   height: 100%; 
-  height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  height: 100svh; /* Small viewport height - accounts for browser UI on mobile */
   min-height: 100vh; /* Fallback for older browsers */
   overflow: hidden;
   /* Support for safe area insets on notched devices */
@@ -97,7 +81,7 @@ body {
   overflow: hidden;
   /* Use full viewport height on mobile */
   min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height */
+  min-height: 100svh; /* Small viewport height */
 }
 
 /* Enhanced Animated Background */
@@ -126,9 +110,8 @@ body::before {
 .app-layout {
   display: flex !important;
   height: 100vh !important;
-  height: var(--viewport-height, 100vh) !important;
+  height: 100svh !important; /* Small viewport height - accounts for browser UI */
   min-height: 100vh !important; /* Fallback for older browsers */
-  min-height: var(--viewport-height, 100vh) !important;
   overflow: visible !important;
   overflow-y: hidden !important;
   width: 100% !important;
@@ -144,14 +127,14 @@ body::before {
   .app-layout {
     padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     gap: 10px;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
+    height: 100vh !important;
+    height: 100svh !important; /* Small viewport height for mobile browsers */
+    min-height: 100vh !important;
   }
 }
 
 /* Refined Glass Sidebar */
 .sidebar {
-  --sidebar-viewport-offset: 40px;
   width: 325px;
   min-width: 325px;
   background: rgba(255, 255, 255, 0.8);
@@ -165,9 +148,7 @@ body::before {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
   height: calc(100vh - 40px);
-  height: calc(var(--viewport-height, 100vh) - var(--sidebar-viewport-offset, 40px));
-  height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 40px));
-  max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 40px));
+  height: calc(100svh - 40px); /* Small viewport height - accounts for browser UI */
   min-height: calc(100vh - 40px); /* Fallback */
   position: relative;
   box-shadow: 
@@ -212,7 +193,6 @@ body::before {
   position: relative;
   z-index: 10;
   pointer-events: auto;
-  flex-shrink: 0; /* Prevent header from being compressed */
 }
 
 .sidebar-brand {
@@ -363,7 +343,6 @@ body::before {
   position: relative;
   z-index: 10;
   pointer-events: auto;
-  flex-shrink: 0; /* Prevent footer from being cut off */
 }
 
 .user-info {
@@ -3195,7 +3174,9 @@ select.control-lg option {
 /* Full screen height for Worst GP Modal */
 .metric-modal-overlay.worst-gp .metric-modal {
   max-height: 100vh;
+  max-height: 100svh; /* Small viewport height for mobile */
   height: 100vh;
+  height: 100svh; /* Small viewport height for mobile */
   max-width: 900px;
 }
 
@@ -3271,7 +3252,9 @@ select.control-lg option {
     width: 100%;
     max-width: 100%;
     height: 100vh;
+    height: 100svh; /* Small viewport height for mobile browsers */
     max-height: 100vh;
+    max-height: 100svh; /* Small viewport height for mobile browsers */
     margin: 0;
     border-radius: 0;
   }
@@ -5742,14 +5725,12 @@ select.control-lg option {
   }
   
   .sidebar {
-    --sidebar-viewport-offset: 160px;
     position: fixed !important;
     left: 20px !important;
     top: 20px !important;
-    /* Use dynamic viewport helpers so the footer stays visible beneath browser UI */
-    max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 160px)) !important;
-    height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 160px)) !important;
-    min-height: auto !important;
+    height: calc(100vh - 40px) !important;
+    height: calc(100svh - 40px) !important; /* Small viewport height for mobile browsers */
+    max-height: calc(100svh - 40px) !important;
     transform: translateX(-120%) !important;
     z-index: 1003 !important; /* Higher than overlay */
     border-radius: 20px;
@@ -5760,8 +5741,6 @@ select.control-lg option {
     background: rgba(255, 255, 255, 0.8) !important;
     backdrop-filter: blur(20px) saturate(150%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-    display: flex !important;
-    flex-direction: column !important;
   }
   
   .sidebar.open {
@@ -5880,27 +5859,6 @@ select.control-lg option {
   
   .toolbar {
     grid-template-columns: 1fr;
-  }
-}
-
-/* Fine-tune sidebar safe height per device */
-@media (max-width: 480px) {
-  .sidebar {
-    --sidebar-viewport-offset: 200px;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 768px) {
-  .sidebar {
-    --sidebar-viewport-offset: 150px;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .sidebar {
-    --sidebar-viewport-offset: 120px;
-    max-height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 120px)) !important;
-    height: calc(var(--viewport-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--sidebar-viewport-offset, 120px)) !important;
   }
 }
 
@@ -8193,52 +8151,31 @@ body.admin-page .main-content {
 @media (max-width: 768px) {
   html {
     height: 100%;
-    height: 100dvh;
+    height: 100svh; /* Use small viewport height */
     min-height: 100vh;
   }
   
   body {
     height: 100%;
-    height: 100dvh;
+    height: 100svh; /* Use small viewport height */
     min-height: 100vh;
   }
   
   .sidebar {
-    /* Use max-height with conservative calculation to account for browser UI */
-    /* Account for browser UI: address bar (~56px) + tabs (~48px) + safe area + margins (~40px) = ~144px */
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
-    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 160px) !important;
-    min-height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  
-  .sidebar-header {
-    flex-shrink: 0 !important;
-  }
-  
-  .sidebar-nav {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on iOS */
-  }
-  
-  .sidebar-footer {
-    flex-shrink: 0 !important;
-    margin-top: auto !important;
+    height: calc(100svh - 20px) !important; /* Use small viewport height */
+    max-height: calc(100svh - 20px) !important;
+    min-height: calc(100vh - 20px) !important;
   }
   
   .main-content {
     height: 100%;
-    height: 100dvh;
+    height: 100svh; /* Use small viewport height */
     min-height: 100vh;
   }
   
   .content-area {
     height: 100%;
-    max-height: 100dvh;
+    max-height: 100svh; /* Use small viewport height */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
@@ -8248,6 +8185,19 @@ body.admin-page .main-content {
 @supports (-webkit-touch-callout: none) {
   html, body {
     height: -webkit-fill-available;
+  }
+  
+  .sidebar {
+    /* Safari fallback for viewport height */
+    height: calc(100vh - 40px) !important;
+    max-height: calc(100vh - 40px) !important;
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar {
+      height: calc(100vh - 40px) !important;
+      max-height: calc(100vh - 40px) !important;
+    }
   }
   
   .app-layout {

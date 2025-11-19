@@ -486,6 +486,15 @@ body::before {
   margin-right: 25%; /* Position right edge at 75% (100% - 25% = 75%) to match cards */
 }
 
+/* Medium and small screens: Align controls to the right */
+@media (max-width: 1199px) {
+  .top-bar-controls {
+    margin-left: auto;
+    margin-right: 0;
+    justify-content: flex-end;
+  }
+}
+
 /* Mobile: Make controls fit on one line */
 @media (max-width: 768px) {
   .top-bar-controls {
@@ -496,6 +505,7 @@ body::before {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
+    justify-content: flex-end;
   }
   
   .top-bar-controls::-webkit-scrollbar {
@@ -948,25 +958,48 @@ select.control-lg option {
   font-weight: 600;
 }
 
-/* Responsive adjustments for toggle */
+/* Medium and small screens: Align toggle to the right */
+@media (max-width: 1199px) {
+  .section-heading-with-toggle {
+    justify-content: space-between;
+    max-width: 100%; /* Remove 75% constraint to allow toggle to reach right edge */
+    width: 100%;
+  }
+ 
+  .summary-view-toggle {
+    margin-left: 0;
+  }
+}
+
+/* Responsive adjustments for toggle on mobile */
 @media (max-width: 768px) {
   .section-heading-with-toggle {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
   }
   
   .section-heading-with-toggle .section-heading {
     margin-bottom: 0;
+    flex-shrink: 0;
   }
   
   .summary-view-toggle {
-    width: 100%;
-    justify-content: stretch;
+    width: auto !important; /* Force auto width to prevent stretching */
+    max-width: none !important; /* Remove any max-width constraints */
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 4px;
+    gap: 4px;
   }
   
   .summary-view-toggle-btn {
-    flex: 1;
+    padding: 6px 12px;
+    font-size: 13px;
+    flex: 0 0 auto; /* Don't grow or shrink */
   }
 }
 
@@ -3014,16 +3047,22 @@ select.control-lg option {
   }
 }
 
-/* Smallest screens - make toggle match cards width */
+/* Smallest screens - keep toggle compact */
 @media (max-width: 480px) {
   .section-heading-with-toggle {
-    max-width: 100% !important; /* Match cards' max-width on mobile - override 75% */
-    width: 100%; /* Full width like cards */
+    max-width: 100% !important;
+    width: 100%;
   }
   
+  /* DO NOT make toggle full width - keep it compact */
   .summary-view-toggle {
-    width: 100%; /* Match cards' width - full width of parent */
-    max-width: 100%; /* Same as cards */
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  .summary-view-toggle-btn {
+    padding: 6px 10px;
+    font-size: 12px;
   }
 }
 

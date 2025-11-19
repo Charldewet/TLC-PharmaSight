@@ -156,6 +156,10 @@ async def dashboard(request: Request):
             if resp.status_code == 200:
                 payload = resp.json() or {}
                 pharmacies = payload.get("pharmacies", [])
+                # Sort pharmacies so "TLC GROUP" always appears last
+                pharmacies.sort(key=lambda p: (
+                    p.get("pharmacy_name") or p.get("name") or ""
+                ).upper() == "TLC GROUP")
                 fetch_error = None
                 break
             fetch_error = f"Failed to load pharmacies (status {resp.status_code})"

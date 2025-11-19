@@ -1634,8 +1634,122 @@
 
       <section id="tab-stock-management" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-stock-management" hidden>
         <div class="stock-management-container">
+          <!-- Purchases Section -->
+          <div class="purchases-section" style="margin-top: 0;">
+            <h2 class="section-heading dispensary-summary-heading">Purchases</h2>
+            
+            <!-- Budget Cards Container -->
+            <div class="dispensary-cards-container">
+              <!-- Full Month Budget Card -->
+              <div class="dashboard-card metric-split">
+                <div class="card-header with-icon">
+                  <span class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                  </span>
+                  <h3>Budget</h3>
+                </div>
+                
+                <div class="dispensary-content-wrapper">
+                  <div class="split-content-wrapper">
+                    <!-- Purchases Value -->
+                    <div class="split-list-item">
+                      <div class="dispensary-list-label dispensary-label-dispensary">Purchases</div>
+                      <div class="dispensary-list-value-wrapper">
+                        <span class="dispensary-list-currency">R</span>
+                        <span class="dispensary-list-value" id="stock-purchases-value">—</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Budget Value -->
+                    <div class="split-list-item">
+                      <div class="dispensary-list-label dispensary-label-frontshop">Budget</div>
+                      <div class="dispensary-list-value-wrapper">
+                        <span class="dispensary-list-currency">R</span>
+                        <span class="dispensary-list-value" id="stock-budget-value">—</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Chart Container -->
+                  <div class="dispensary-chart-container">
+                    <svg class="dispensary-chart-svg" viewBox="0 0 120 120">
+                      <defs>
+                        <linearGradient id="budgetPieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#34D399;stop-opacity:1" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="#E5E7EB" stroke-width="20"/>
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#budgetPieGradient)" stroke-width="20" stroke-dasharray="314" stroke-dashoffset="314" style="transition: stroke-dashoffset 1s ease; stroke-linecap: round;" class="chart-segment" id="stock-budget-chart-segment"/>
+                    </svg>
+                    <div class="chart-center-content">
+                      <span class="chart-center-value" id="stock-budget-percentage">0%</span>
+                      <span class="chart-center-label">USED</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- MTD Budget Card -->
+              <div class="dashboard-card metric-scripts">
+                <div class="card-header with-icon">
+                  <span class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                  </span>
+                  <h3>MTD Budget</h3>
+                </div>
+                
+                <div class="dispensary-content-wrapper">
+                  <div class="split-content-wrapper">
+                    <!-- Purchases Value -->
+                    <div class="split-list-item">
+                      <div class="dispensary-list-label dispensary-label-dispensary">Purchases</div>
+                      <div class="dispensary-list-value-wrapper">
+                        <span class="dispensary-list-currency">R</span>
+                        <span class="dispensary-list-value" id="stock-mtd-purchases-value">—</span>
+                      </div>
+                    </div>
+                    
+                    <!-- MTD Budget Value -->
+                    <div class="split-list-item">
+                      <div class="dispensary-list-label dispensary-label-frontshop">MTD Budget</div>
+                      <div class="dispensary-list-value-wrapper">
+                        <span class="dispensary-list-currency">R</span>
+                        <span class="dispensary-list-value" id="stock-mtd-budget-value">—</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Chart Container -->
+                  <div class="dispensary-chart-container">
+                    <svg class="dispensary-chart-svg" viewBox="0 0 120 120">
+                      <defs>
+                        <linearGradient id="mtdBudgetPieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="#E5E7EB" stroke-width="20"/>
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#mtdBudgetPieGradient)" stroke-width="20" stroke-dasharray="314" stroke-dashoffset="314" style="transition: stroke-dashoffset 1s ease; stroke-linecap: round;" class="chart-segment" id="stock-mtd-budget-chart-segment"/>
+                    </svg>
+                    <div class="chart-center-content">
+                      <span class="chart-center-value" id="stock-mtd-budget-percentage">0%</span>
+                      <span class="chart-center-label">USED</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Stock Overview Cards -->
-          <div class="section-heading-with-actions">
+          <div class="section-heading-with-actions" style="margin-top: 2rem;">
             <h2 class="section-heading">Stock Overview</h2>
           </div>
 
@@ -1792,120 +1906,6 @@
                 <span class="card-value-amount" id="stock-mtd-gp">—</span>
               </div>
               <div class="card-comparison-simple" id="stock-mtd-gp-value">—</div>
-            </div>
-          </div>
-
-          <!-- Purchases Section -->
-          <div class="purchases-section" style="margin-top: 2rem;">
-            <h2 class="section-heading dispensary-summary-heading">Purchases</h2>
-            
-            <!-- Budget Cards Container -->
-            <div class="dispensary-cards-container">
-              <!-- Full Month Budget Card -->
-              <div class="dashboard-card metric-split">
-                <div class="card-header with-icon">
-                  <span class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                  </span>
-                  <h3>Budget</h3>
-                </div>
-                
-                <div class="dispensary-content-wrapper">
-                  <div class="split-content-wrapper">
-                    <!-- Purchases Value -->
-                    <div class="split-list-item">
-                      <div class="dispensary-list-label dispensary-label-dispensary">Purchases</div>
-                      <div class="dispensary-list-value-wrapper">
-                        <span class="dispensary-list-currency">R</span>
-                        <span class="dispensary-list-value" id="stock-purchases-value">—</span>
-                      </div>
-                    </div>
-                    
-                    <!-- Budget Value -->
-                    <div class="split-list-item">
-                      <div class="dispensary-list-label dispensary-label-frontshop">Budget</div>
-                      <div class="dispensary-list-value-wrapper">
-                        <span class="dispensary-list-currency">R</span>
-                        <span class="dispensary-list-value" id="stock-budget-value">—</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Chart Container -->
-                  <div class="dispensary-chart-container">
-                    <svg class="dispensary-chart-svg" viewBox="0 0 120 120">
-                      <defs>
-                        <linearGradient id="budgetPieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
-                          <stop offset="100%" style="stop-color:#34D399;stop-opacity:1" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="#E5E7EB" stroke-width="20"/>
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#budgetPieGradient)" stroke-width="20" stroke-dasharray="314" stroke-dashoffset="314" style="transition: stroke-dashoffset 1s ease; stroke-linecap: round;" class="chart-segment" id="stock-budget-chart-segment"/>
-                    </svg>
-                    <div class="chart-center-content">
-                      <span class="chart-center-value" id="stock-budget-percentage">0%</span>
-                      <span class="chart-center-label">USED</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- MTD Budget Card -->
-              <div class="dashboard-card metric-scripts">
-                <div class="card-header with-icon">
-                  <span class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                  </span>
-                  <h3>MTD Budget</h3>
-                </div>
-                
-                <div class="dispensary-content-wrapper">
-                  <div class="split-content-wrapper">
-                    <!-- Purchases Value -->
-                    <div class="split-list-item">
-                      <div class="dispensary-list-label dispensary-label-dispensary">Purchases</div>
-                      <div class="dispensary-list-value-wrapper">
-                        <span class="dispensary-list-currency">R</span>
-                        <span class="dispensary-list-value" id="stock-mtd-purchases-value">—</span>
-                      </div>
-                    </div>
-                    
-                    <!-- MTD Budget Value -->
-                    <div class="split-list-item">
-                      <div class="dispensary-list-label dispensary-label-frontshop">MTD Budget</div>
-                      <div class="dispensary-list-value-wrapper">
-                        <span class="dispensary-list-currency">R</span>
-                        <span class="dispensary-list-value" id="stock-mtd-budget-value">—</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Chart Container -->
-                  <div class="dispensary-chart-container">
-                    <svg class="dispensary-chart-svg" viewBox="0 0 120 120">
-                      <defs>
-                        <linearGradient id="mtdBudgetPieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
-                          <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="#E5E7EB" stroke-width="20"/>
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="url(#mtdBudgetPieGradient)" stroke-width="20" stroke-dasharray="314" stroke-dashoffset="314" style="transition: stroke-dashoffset 1s ease; stroke-linecap: round;" class="chart-segment" id="stock-mtd-budget-chart-segment"/>
-                    </svg>
-                    <div class="chart-center-content">
-                      <span class="chart-center-value" id="stock-mtd-budget-percentage">0%</span>
-                      <span class="chart-center-label">USED</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -11004,6 +11004,14 @@
             id: option.getAttribute('data-pharmacy-id'),
             name: option.getAttribute('data-pharmacy-name')
           });
+        });
+        // Sort pharmacies so "TLC GROUP" always appears last
+        pharmacies.sort((a, b) => {
+          const aIsGroup = (a.name || '').toUpperCase() === 'TLC GROUP';
+          const bIsGroup = (b.name || '').toUpperCase() === 'TLC GROUP';
+          if (aIsGroup && !bIsGroup) return 1;  // TLC GROUP goes to end
+          if (!aIsGroup && bIsGroup) return -1;  // Non-group goes before TLC GROUP
+          return (a.name || '').localeCompare(b.name || ''); // Otherwise alphabetical
         });
         return pharmacies;
       }

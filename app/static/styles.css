@@ -5765,11 +5765,11 @@ select.control-lg option {
   
   .sidebar {
     position: fixed !important;
-    left: 20px !important;
-    top: 20px !important;
-    height: calc(100vh - 40px) !important;
-    height: calc(100svh - 40px) !important; /* Small viewport height for mobile browsers */
-    max-height: calc(100svh - 40px) !important;
+    left: max(20px, env(safe-area-inset-left)) !important;
+    top: max(20px, env(safe-area-inset-top)) !important;
+    height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    height: calc(100svh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important; /* Small viewport height for mobile browsers */
+    max-height: calc(100svh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
     transform: translateX(-120%) !important;
     z-index: 1003 !important; /* Higher than overlay */
     border-radius: 20px;
@@ -5825,7 +5825,7 @@ select.control-lg option {
   }
   
   .top-bar {
-    padding: 16px 20px;
+    padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
   }
   
   /* Responsive dispensary card - stack grid on mobile */
@@ -5852,7 +5852,7 @@ select.control-lg option {
   }
   
   .content-area {
-    padding: 16px 20px;
+    padding: 16px max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   }
   
   .page-title {
@@ -8201,9 +8201,9 @@ body.admin-page .main-content {
   }
   
   .sidebar {
-    height: calc(100svh - 20px) !important; /* Use small viewport height */
-    max-height: calc(100svh - 20px) !important;
-    min-height: calc(100vh - 20px) !important;
+    height: calc(100svh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important; /* Use small viewport height */
+    max-height: calc(100svh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    min-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
   }
   
   .main-content {
@@ -8227,15 +8227,15 @@ body.admin-page .main-content {
   }
   
   .sidebar {
-    /* Safari fallback for viewport height */
-    height: calc(100vh - 40px) !important;
-    max-height: calc(100vh - 40px) !important;
+    /* Safari fallback for viewport height with safe areas */
+    height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    max-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
   }
   
   @media (max-width: 768px) {
     .sidebar {
-      height: calc(100vh - 40px) !important;
-      max-height: calc(100vh - 40px) !important;
+      height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+      max-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
     }
   }
   

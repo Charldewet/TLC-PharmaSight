@@ -3933,11 +3933,11 @@
         if (onHand === undefined) onHand = 0;
         
         try {
-          // Default to last 7 days for daily breakdown
+          // Default to last 3 months for daily breakdown
           var endDate = selectedDate || getYesterdayDate();
           var endDateObj = new Date(endDate + 'T00:00:00');
           var startDateObj = new Date(endDateObj);
-          startDateObj.setDate(startDateObj.getDate() - 6); // 7 days total
+          startDateObj.setMonth(startDateObj.getMonth() - 3); // 3 months back
           var startDate = formatYmdLocal(startDateObj);
           
           var url = `/api/products/${encodeURIComponent(productCode)}/sales?from_date=${startDate}&to_date=${endDate}&pharmacy_id=${pid}`;

@@ -587,6 +587,7 @@
       },
 
       async createUser(userData) {
+        // First, create the user with just username and password
         const response = await fetch('/api/admin/users', {
           method: 'POST',
           headers: {
@@ -595,16 +596,24 @@
           credentials: 'include',
           body: JSON.stringify({
             username: userData.username,
-            password: userData.password,
-            pharmacy_ids: userData.pharmacyIds || null,
-            can_write: userData.canWrite || false
+            password: userData.password
           })
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.detail || `Request failed: ${response.status}`);
         }
-        return await response.json();
+        const newUser = await response.json();
+        
+        // Then, grant pharmacy access for each selected pharmacy
+        if (userData.pharmacyIds && userData.pharmacyIds.length > 0) {
+          const pharmacyPromises = userData.pharmacyIds.map(pharmacyId => 
+            this.grantPharmacyAccess(newUser.user_id, pharmacyId, true, userData.canWrite || false)
+          );
+          await Promise.all(pharmacyPromises);
+        }
+        
+        return newUser;
       },
 
       async updateUser(userId, updates) {

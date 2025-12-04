@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "PharmaSight",
+    "slug": "pharmasight-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F2"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pharmasight.app",
+      "buildNumber": "1",
+      "deploymentTarget": "13.0",
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "This app does not track users across apps or websites.",
+        "NSPhotoLibraryUsageDescription": "PharmaSight needs access to your photo library to save reports and documents.",
+        "NSPhotoLibraryAddUsageDescription": "PharmaSight needs access to save reports and documents to your photo library.",
+        "UIBackgroundModes": []
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFF8F2"
+      },
+      "package": "com.pharmasight.app",
+      "versionCode": 1,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}
+

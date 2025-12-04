@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 import httpx
@@ -16,6 +17,15 @@ from .db import engine
 load_dotenv()
 
 app = FastAPI(title="BudgetingApp")
+
+# CORS middleware for mobile app support
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your mobile app's origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Config
 API_BASE_URL = os.getenv("PHARMA_API_BASE", "https://pharmacy-api-webservice.onrender.com")
@@ -122,6 +132,107 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
     print(f"[DEBUG] Login - Username: {request.session.get('username')}, User ID: {request.session.get('user_id')}")
 
     return RedirectResponse(url="/dashboard", status_code=303)
+
+
+@app.post("/api/mobile/login")
+async def mobile_login(username: str = Form(...), password: str = Form(...)):
+    """Mobile-friendly login endpoint that returns a token in JSON format"""
+    auth_url = f"{API_BASE_URL}/auth/login"
+    headers = {"Authorization": f"Bearer {API_KEY}"} if API_KEY else {}
+    payload = {"username": username, "password": password}
+
+    print(f"[DEBUG] Mobile login attempt - Username: {username}")
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(auth_url, json=payload, headers=headers)
+
+    print(f"[DEBUG] Mobile login response status: {resp.status_code}")
+    if resp.status_code != 200:
+        error_detail = ""
+        try:
+            error_data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+            error_detail = error_data.get("detail", error_data.get("message", ""))
+        except:
+            error_detail = "Invalid username or password"
+        
+        raise HTTPException(status_code=401, detail=error_detail or "Invalid username or password")
+
+    data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+    token = data.get("token") or data.get("access_token") or data.get("api_key")
+    canonical_username = data.get("username") or data.get("user", {}).get("username") or username
+    user_id = data.get("user_id") or data.get("user", {}).get("user_id") or data.get("id")
+    
+    # If user_id not in login response, try to fetch it from the users endpoint
+    if not user_id and token:
+        try:
+            path_username = quote(str(canonical_username or username).strip(), safe="")
+            user_info_url = f"{API_BASE_URL}/users/{path_username}/pharmacies"
+            auth_headers = {"Authorization": f"Bearer {token}"}
+            async with httpx.AsyncClient(timeout=15) as client:
+                user_resp = await client.get(user_info_url, headers=auth_headers)
+                if user_resp.status_code == 200:
+                    user_data = user_resp.json() or {}
+                    # Try to get user_id from user data
+                    user_id = user_data.get("user_id") or user_data.get("id")
+        except Exception as e:
+            print(f"[WARNING] Failed to fetch user_id after mobile login: {e}")
+    
+    # Return token for mobile app
+    return JSONResponse({
+        "token": token,
+        "username": str(canonical_username or username).strip(),
+        "user_id": int(user_id) if user_id else None
+    })
+
+
+@app.get("/api/mobile/pharmacies")
+async def mobile_get_pharmacies(request: Request, username: str = Query(...)) -> JSONResponse:
+    """Mobile-friendly endpoint to get user's pharmacies"""
+    # Get token from Authorization header (mobile apps send this)
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    
+    # Use canonical username exactly as stored; URL-encode for safety
+    path_username = quote(str(username).strip(), safe="")
+    url = f"{API_BASE_URL}/users/{path_username}/pharmacies"
+
+    pharmacies = []
+    error_message = None
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        candidate_headers = []
+        if token:
+            candidate_headers.append({"Authorization": f"Bearer {token}"})
+        if API_KEY:
+            candidate_headers.append({"Authorization": f"Bearer {API_KEY}"})
+            candidate_headers.append({"X-API-Key": API_KEY})
+
+        for headers in candidate_headers:
+            try:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    payload = resp.json() or {}
+                    pharmacies = payload.get("pharmacies", [])
+                    # Sort pharmacies so "TLC GROUP" always appears last
+                    pharmacies.sort(key=lambda p: (
+                        p.get("pharmacy_name") or p.get("name") or ""
+                    ).upper() == "TLC GROUP")
+                    break
+            except httpx.TimeoutException:
+                error_message = "Request to pharmacy API timed out"
+                break
+            except httpx.RequestError as e:
+                error_message = f"Request error: {str(e)}"
+                break
+            except Exception as e:
+                error_message = f"Unexpected error: {str(e)}"
+                continue
+
+    if error_message and not pharmacies:
+        raise HTTPException(status_code=503, detail=error_message)
+    
+    return JSONResponse({"pharmacies": pharmacies})
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -846,12 +957,27 @@ async def api_admin_create_user(request: Request) -> JSONResponse:
     
     user_data = await request.json()
     
+    # Debug: Log what we're sending
+    print(f"[DEBUG] Creating user - Request data: {user_data}")
+    print(f"[DEBUG] Using bearer token: {bearer[:20] if bearer else 'None'}...")
+    
     async with httpx.AsyncClient(timeout=15) as client:
         url = f"{API_BASE_URL}/admin/users"
+        print(f"[DEBUG] POST to: {url}")
         resp = await client.post(url, json=user_data, headers=headers)
+        
+        print(f"[DEBUG] Response status: {resp.status_code}")
+        print(f"[DEBUG] Response body: {resp.text[:500]}")
     
     if resp.status_code != 200:
-        error_detail = resp.json().get("detail", "Failed to create user") if resp.headers.get("content-type", "").startswith("application/json") else "Failed to create user"
+        error_detail = "Failed to create user"
+        try:
+            error_json = resp.json()
+            error_detail = error_json.get("detail", str(error_json))
+            print(f"[DEBUG] Error detail: {error_detail}")
+        except:
+            error_detail = resp.text[:200]
+            print(f"[DEBUG] Raw error: {error_detail}")
         raise HTTPException(status_code=resp.status_code, detail=error_detail)
     
     return JSONResponse(resp.json())

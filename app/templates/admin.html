@@ -265,10 +265,6 @@
             <input type="text" id="new-username" name="username" required />
           </div>
           <div class="form-group">
-            <label for="new-email">Email *</label>
-            <input type="email" id="new-email" name="email" required placeholder="user@example.com" />
-          </div>
-          <div class="form-group">
             <label for="new-password">Password *</label>
             <input type="password" id="new-password" name="password" required />
           </div>
@@ -591,6 +587,9 @@
       },
 
       async createUser(userData) {
+        // Auto-generate email from username (backend requires email field)
+        const autoEmail = `${userData.username.toLowerCase().replace(/[^a-z0-9]/g, '')}@pharmasight.co.za`;
+        
         // First, create the user with username, email, and password
         const response = await fetch('/api/admin/users', {
           method: 'POST',
@@ -600,7 +599,7 @@
           credentials: 'include',
           body: JSON.stringify({
             username: userData.username,
-            email: userData.email,
+            email: autoEmail,
             password: userData.password
           })
         });
@@ -1262,7 +1261,6 @@
       try {
         await AdminService.createUser({
           username: formData.get('username'),
-          email: formData.get('email'),
           password: formData.get('password'),
           pharmacyIds: Array.from(pharmacyCheckboxes).map(cb => parseInt(cb.value)),
           canWrite: false // Always read-only access

@@ -1224,27 +1224,12 @@ async def api_admin_create_chart_of_account(request: Request) -> JSONResponse:
     if not _check_admin_access(request):
         raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
     
-    # Use X-API-Key as primary auth method (as per backend API spec)
-    headers = {"Content-Type": "application/json"}
-    if API_KEY:
-        headers["X-API-Key"] = API_KEY
-    else:
-        bearer = request.session.get("auth_token") or ""
-        if bearer:
-            headers["Authorization"] = f"Bearer {bearer}"
-    
     account_data = await request.json()
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
     
     async with httpx.AsyncClient(timeout=15) as client:
         url = f"{API_BASE_URL}/admin/chart-of-accounts"
         resp = await client.post(url, json=account_data, headers=headers)
-        
-        # If X-API-Key fails, try Bearer token as fallback
-        if resp.status_code == 401 and headers.get("X-API-Key"):
-            bearer = request.session.get("auth_token") or ""
-            if bearer:
-                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
-                resp = await client.post(url, json=account_data, headers=alt_headers)
     
     if resp.status_code != 200:
         error_detail = (
@@ -1263,27 +1248,12 @@ async def api_admin_update_chart_of_account(request: Request, account_id: int) -
     if not _check_admin_access(request):
         raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
     
-    # Use X-API-Key as primary auth method (as per backend API spec)
-    headers = {"Content-Type": "application/json"}
-    if API_KEY:
-        headers["X-API-Key"] = API_KEY
-    else:
-        bearer = request.session.get("auth_token") or ""
-        if bearer:
-            headers["Authorization"] = f"Bearer {bearer}"
-    
     account_data = await request.json()
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
     
     async with httpx.AsyncClient(timeout=15) as client:
         url = f"{API_BASE_URL}/admin/chart-of-accounts/{account_id}"
         resp = await client.put(url, json=account_data, headers=headers)
-        
-        # If X-API-Key fails, try Bearer token as fallback
-        if resp.status_code == 401 and headers.get("X-API-Key"):
-            bearer = request.session.get("auth_token") or ""
-            if bearer:
-                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
-                resp = await client.put(url, json=account_data, headers=alt_headers)
     
     if resp.status_code != 200:
         error_detail = (

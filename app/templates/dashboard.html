@@ -14029,19 +14029,11 @@
           console.log('JSON being sent to backend:', jsonBody);
           console.log('Formatted JSON:', JSON.stringify(accountData, null, 2));
           
-          const token = localStorage.getItem('admin_token'); // or your token retrieval method
-          
-          const headers = {
-            'Content-Type': 'application/json'
-          };
-          
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          
           const response = await fetch('/api/admin/chart-of-accounts', {
             method: 'POST',
-            headers: headers,
+            headers: {
+              'Content-Type': 'application/json'
+            },
             credentials: 'include',
             body: jsonBody
           });
@@ -14059,19 +14051,11 @@
         },
 
         async updateAccount(accountId, updates) {
-          const token = localStorage.getItem('admin_token'); // or your token retrieval method
-          
-          const headers = {
-            'Content-Type': 'application/json'
-          };
-          
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          
           const response = await fetch(`/api/admin/chart-of-accounts/${accountId}`, {
             method: 'PUT',
-            headers: headers,
+            headers: {
+              'Content-Type': 'application/json'
+            },
             credentials: 'include',
             body: JSON.stringify(updates)
           });

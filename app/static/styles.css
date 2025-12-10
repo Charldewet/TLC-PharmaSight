@@ -4796,6 +4796,70 @@ select.control-lg option {
 .metric-gp .card-header.with-icon h3 { color: var(--chartGP); }
 .metric-gp .card-header.with-icon .card-icon { color: var(--chartGP); }
 
+/* GP Toggle Button */
+.gp-toggle-container {
+  margin-left: auto;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.gp-toggle-btn {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--textSecondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.gp-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--chartGP);
+  color: var(--chartGP);
+}
+
+.gp-toggle-btn[data-mode="split"] {
+  background: var(--chartGP);
+  border-color: var(--chartGP);
+  color: white;
+}
+
+.gp-toggle-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* GP Split View */
+.gp-split-view {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.gp-split-line {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--textSecondary);
+}
+
+.combined-metric-section .gp-split-view {
+  margin-top: 4px;
+}
+
+.combined-metric-section .gp-split-line {
+  font-size: 11px;
+}
+
 .metric-purchases .card-header.with-icon h3 { color: var(--chartPurchases); }
 .metric-purchases .card-header.with-icon .card-icon { color: var(--chartPurchases); }
 .metric-purchase-budget .card-header.with-icon h3 { color: var(--chartTurnover); }
@@ -5505,6 +5569,14 @@ select.control-lg option {
   opacity: 1 !important;
   position: relative !important;
   z-index: 1 !important;
+}
+
+/* Unmatched transactions tab should fill height and handle scrolling internally */
+#tab-unmatched-transactions.tab-panel {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .tab-panel[hidden] {
@@ -7060,6 +7132,151 @@ select.control-lg option {
   justify-content: flex-end;
 }
 
+/* Bank Account Picker Button */
+.bank-account-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bgSecondary);
+  border: 1px solid var(--surfaceBorder);
+  border-radius: 12px;
+  color: var(--textPrimary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.bank-account-picker-btn:hover:not(:disabled) {
+  background: var(--surfaceHover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.bank-account-picker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bank-account-picker-btn svg {
+  color: var(--textSecondary);
+  flex-shrink: 0;
+}
+
+/* Bank Account Picker Modal */
+.bank-account-picker-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+.bank-account-picker-modal-overlay.active {
+  display: flex;
+}
+
+.bank-account-picker-modal {
+  background: var(--bgSecondary);
+  border-radius: 20px;
+  padding: 0;
+  max-width: 400px;
+  width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+.bank-account-picker-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--surfaceBorder);
+}
+
+.bank-account-picker-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--textPrimary);
+}
+
+.bank-account-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  max-height: calc(80vh - 140px);
+}
+
+.bank-account-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none; 
+  border-radius: 12px;
+  color: var(--textPrimary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.bank-account-option:hover {
+  background: var(--surfaceHover);
+}
+
+.bank-account-option.selected {
+  background: rgba(239, 69, 35, 0.1);
+  color: var(--accentPrimary);
+}
+
+.bank-account-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--surfaceHover);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.bank-account-option.selected .bank-account-icon {
+  background: rgba(239, 69, 35, 0.15);
+}
+
+.bank-account-icon svg {
+  color: var(--textSecondary);
+}
+
+.bank-account-option.selected .bank-account-icon svg {
+  color: var(--accentPrimary);
+}
+
+.bank-account-picker-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--surfaceBorder);
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Date Picker Modal */
 .date-picker-modal-overlay {
   position: fixed;
@@ -7297,6 +7514,76 @@ select.control-lg option {
     margin-left: 0;
     margin-right: auto;
   }
+  
+  /* Bank Rules and Unmatched Transactions screens should be full width */
+  #tab-bank-rules .admin-container,
+  #tab-unmatched-transactions .admin-container {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  #tab-bank-rules .admin-section,
+  #tab-unmatched-transactions .admin-section {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  /* Fix scrolling for unmatched transactions - separate cards */
+  #tab-unmatched-transactions {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  #tab-unmatched-transactions .admin-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+  
+  /* Reconciliation summary widget */
+  #tab-unmatched-transactions .reconciliation-summary-widget {
+    flex-shrink: 0;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Stationary card with action buttons */
+  #tab-unmatched-transactions .unmatched-actions-card {
+    flex-shrink: 0;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Scrollable card with transaction list */
+  #tab-unmatched-transactions .unmatched-transactions-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    margin-bottom: 0 !important;
+  }
+  
+  #tab-unmatched-transactions .unmatched-filters {
+    flex-shrink: 0;
+  }
+  
+  #tab-unmatched-transactions .admin-table-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Make table header sticky when scrolling */
+  #tab-unmatched-transactions .admin-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
 }
 
 /* Allow scrolling on admin page */
@@ -7344,6 +7631,97 @@ body.admin-page .main-content {
   color: var(--textPrimary);
 }
 
+/* Reconciliation Summary Widget Styles */
+.reconciliation-summary-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.reconciliation-card {
+  padding: 16px 24px;
+  border-radius: 12px;
+  min-width: 140px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reconciliation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.reconciliation-card-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.reconciliation-card-orange {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+}
+
+.reconciliation-card-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  opacity: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reconciliation-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.reconciliation-difference-box {
+  padding: 16px 24px;
+  border-radius: 12px;
+  min-width: 160px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reconciliation-difference-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--textMuted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reconciliation-difference-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--textPrimary);
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .reconciliation-summary-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .reconciliation-card,
+  .reconciliation-difference-box {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  #reconciliation-goto-unmatched-btn {
+    width: 100%;
+  }
+}
+
 /* Limit button width on large screens */
 @media (min-width: 1200px) {
   .admin-section-header .btn {
@@ -7377,6 +7755,17 @@ body.admin-page .main-content {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.admin-table th .sort-indicator {
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.admin-table th:hover {
+  background: var(--surfaceHover);
+  cursor: pointer;
 }
 
 .admin-table td {
@@ -7437,6 +7826,11 @@ body.admin-page .main-content {
 .badge-warning {
   background: rgba(255, 149, 0, 0.15);
   color: #FF9500;
+}
+
+.badge-info {
+  background: rgba(255, 69, 9, 0.15);
+  color: #FF4509;
 }
 
 .btn-info {
@@ -7735,6 +8129,112 @@ body.admin-page .main-content {
   text-align: center;
   padding: 20px;
   color: var(--textSecondary);
+}
+
+/* Unmatched Transactions Progress Bar */
+.unmatched-progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--surfaceBorder);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.unmatched-progress-bar-fill {
+  height: 100%;
+  background: var(--accentPrimary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Account Selection Modal Styles */
+.account-selection-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--surfaceBorder);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.account-selection-item:last-child {
+  border-bottom: none;
+}
+
+.account-selection-item:hover {
+  background: var(--bgPrimary);
+}
+
+.account-selection-item.selected {
+  background: rgba(255, 69, 9, 0.1);
+  border-left: 3px solid var(--accentPrimary);
+}
+
+.account-selection-code {
+  font-weight: 600;
+  color: var(--textPrimary);
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.account-selection-separator {
+  color: var(--textMuted);
+  flex-shrink: 0;
+}
+
+.account-selection-name {
+  color: var(--textSecondary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-selection-category {
+  color: var(--textMuted);
+  font-style: italic;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.account-select-button {
+  padding: 6px 12px;
+  font-size: 11px;
+  border: 1px solid var(--surfaceBorder);
+  background: var(--bgSecondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  text-align: left;
+  position: relative;
+}
+
+.account-select-button:hover {
+  border-color: var(--accentPrimary);
+  background: var(--bgPrimary);
+}
+
+.account-select-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-select-button::after {
+  content: '▼';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--textMuted);
 }
 
 .error-text {

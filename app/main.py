@@ -9,8 +9,10 @@ import httpx
 import os
 from dotenv import load_dotenv
 from urllib.parse import quote
-from datetime import date
+from datetime import date, datetime
 from calendar import monthrange
+import csv
+import io
 from .db import engine
 
 # Load environment variables
@@ -471,6 +473,73 @@ async def api_mtd(request: Request, pid: int, month: str, through: str) -> JSONR
         raise HTTPException(status_code=resp.status_code, detail="Failed to fetch MTD data")
     
     return JSONResponse(resp.json())
+
+
+@app.get("/api/pharmacies/{pharmacy_id}/days/{date}/gp-breakdown")
+async def api_gp_breakdown(request: Request, pharmacy_id: int, date: str) -> JSONResponse:
+    """Get GP breakdown (dispensary and frontshop) for a pharmacy on a specific date
+    
+    Args:
+        pharmacy_id: Pharmacy ID
+        date: Date in YYYY-MM-DD format
+    """
+    headers = _auth_headers(request)
+    async with httpx.AsyncClient(timeout=20) as client:
+        url = f"{API_BASE_URL}/pharmacies/{pharmacy_id}/days/{date}/gp-breakdown"
+        print(f"[DEBUG] GP Breakdown API Call (Single Date) - URL: {url}")
+        resp = await client.get(url, headers=headers)
+        if resp.status_code == 401 and API_KEY:
+            # Retry with X-API-Key if bearer rejected
+            resp = await client.get(url, headers={"X-API-Key": API_KEY})
+        
+        print(f"[DEBUG] GP Breakdown API Response - Status: {resp.status_code}")
+        
+        if resp.status_code != 200:
+            print(f"[DEBUG] GP Breakdown API Error - Status: {resp.status_code}, Response: {resp.text[:200]}")
+            # Return empty breakdown instead of raising exception
+            return JSONResponse({
+                "dispensary": {"gp_percentage": 0},
+                "frontshop": {"gp_percentage": 0},
+                "error": f"API returned status {resp.status_code}"
+            })
+        
+        data = resp.json()
+        print(f"[DEBUG] GP Breakdown API Data: {data}")
+        return JSONResponse(data)
+
+
+@app.get("/api/pharmacies/{pharmacy_id}/days/gp-breakdown")
+async def api_gp_breakdown_range(request: Request, pharmacy_id: int, from_date: str = Query(..., alias="from"), to_date: str = Query(..., alias="to")) -> JSONResponse:
+    """Get GP breakdown (dispensary and frontshop) for a pharmacy across a date range
+    
+    Args:
+        pharmacy_id: Pharmacy ID
+        from_date: Start date in YYYY-MM-DD format (query param: from)
+        to_date: End date in YYYY-MM-DD format (query param: to)
+    """
+    headers = _auth_headers(request)
+    async with httpx.AsyncClient(timeout=20) as client:
+        url = f"{API_BASE_URL}/pharmacies/{pharmacy_id}/days/gp-breakdown?from={from_date}&to={to_date}"
+        print(f"[DEBUG] GP Breakdown API Call (Date Range) - URL: {url}")
+        resp = await client.get(url, headers=headers)
+        if resp.status_code == 401 and API_KEY:
+            # Retry with X-API-Key if bearer rejected
+            resp = await client.get(url, headers={"X-API-Key": API_KEY})
+        
+        print(f"[DEBUG] GP Breakdown API Response - Status: {resp.status_code}")
+        
+        if resp.status_code != 200:
+            print(f"[DEBUG] GP Breakdown API Error - Status: {resp.status_code}, Response: {resp.text[:200]}")
+            # Return empty breakdown instead of raising exception
+            return JSONResponse({
+                "dispensary": {"gp_percentage": 0},
+                "frontshop": {"gp_percentage": 0},
+                "error": f"API returned status {resp.status_code}"
+            })
+        
+        data = resp.json()
+        print(f"[DEBUG] GP Breakdown API Data: {data}")
+        return JSONResponse(data)
 
 
 @app.get("/api/stock-value")
@@ -1116,6 +1185,1223 @@ async def api_admin_list_pharmacies(request: Request) -> JSONResponse:
     
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail="Failed to fetch pharmacies")
+    
+    return JSONResponse(resp.json())
+
+
+# Chart of Accounts API Endpoints
+@app.get("/api/admin/chart-of-accounts")
+async def api_admin_list_chart_of_accounts(request: Request) -> JSONResponse:
+    """Proxy endpoint to list all chart of accounts - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/admin/chart-of-accounts"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch chart of accounts")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/admin/chart-of-accounts")
+async def api_admin_create_chart_of_account(request: Request) -> JSONResponse:
+    """Proxy endpoint to create a new chart of account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    # Use X-API-Key as primary auth method (as per backend API spec)
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        bearer = request.session.get("auth_token") or ""
+        if bearer:
+            headers["Authorization"] = f"Bearer {bearer}"
+    
+    account_data = await request.json()
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/admin/chart-of-accounts"
+        resp = await client.post(url, json=account_data, headers=headers)
+        
+        # If X-API-Key fails, try Bearer token as fallback
+        if resp.status_code == 401 and headers.get("X-API-Key"):
+            bearer = request.session.get("auth_token") or ""
+            if bearer:
+                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
+                resp = await client.post(url, json=account_data, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to create account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.put("/api/admin/chart-of-accounts/{account_id}")
+async def api_admin_update_chart_of_account(request: Request, account_id: int) -> JSONResponse:
+    """Proxy endpoint to update a chart of account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    # Use X-API-Key as primary auth method (as per backend API spec)
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        bearer = request.session.get("auth_token") or ""
+        if bearer:
+            headers["Authorization"] = f"Bearer {bearer}"
+    
+    account_data = await request.json()
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/admin/chart-of-accounts/{account_id}"
+        resp = await client.put(url, json=account_data, headers=headers)
+        
+        # If X-API-Key fails, try Bearer token as fallback
+        if resp.status_code == 401 and headers.get("X-API-Key"):
+            bearer = request.session.get("auth_token") or ""
+            if bearer:
+                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
+                resp = await client.put(url, json=account_data, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to update account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+# Chart of Accounts API Endpoints (Public/Read-only endpoints)
+@app.get("/api/accounts")
+async def api_list_accounts(
+    request: Request,
+    type: str = Query(None, alias="type"),
+    category: str = Query(None, alias="category"),
+    is_active: bool = Query(None, alias="is_active"),
+    include_inactive: bool = Query(None, alias="include_inactive")
+) -> JSONResponse:
+    """Proxy endpoint to list all accounts with optional filters"""
+    # Use X-API-Key as primary auth method for accounts endpoint (as per backend API)
+    headers = {}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        bearer = request.session.get("auth_token") or ""
+        if bearer:
+            headers["Authorization"] = f"Bearer {bearer}"
+    
+    params = {}
+    if type:
+        params["type"] = type
+    if category:
+        params["category"] = category
+    if is_active is not None:
+        params["is_active"] = str(is_active).lower()
+    if include_inactive is not None:
+        params["include_inactive"] = str(include_inactive).lower()
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts"
+        resp = await client.get(url, params=params, headers=headers)
+        
+        # If X-API-Key fails, try Bearer token as fallback
+        if resp.status_code == 401 and headers.get("X-API-Key"):
+            bearer = request.session.get("auth_token") or ""
+            if bearer:
+                alt_headers = {"Authorization": f"Bearer {bearer}"}
+                resp = await client.get(url, params=params, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch accounts")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/accounts/{account_id}")
+async def api_get_account(request: Request, account_id: int) -> JSONResponse:
+    """Proxy endpoint to get account by ID"""
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts/{account_id}"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/accounts/code/{account_code}")
+async def api_get_account_by_code(request: Request, account_code: str) -> JSONResponse:
+    """Proxy endpoint to get account by code"""
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts/code/{account_code}"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/accounts/types/list")
+async def api_list_account_types(request: Request) -> JSONResponse:
+    """Proxy endpoint to list all account types"""
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts/types/list"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch account types")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/accounts/categories/list")
+async def api_list_account_categories(request: Request) -> JSONResponse:
+    """Proxy endpoint to list all account categories"""
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts/categories/list"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch account categories")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/accounts/summary/stats")
+async def api_get_account_summary_stats(request: Request) -> JSONResponse:
+    """Proxy endpoint to get summary statistics for accounts"""
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/accounts/summary/stats"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch account statistics")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+# Bank Accounts API Endpoints
+@app.get("/api/bank-accounts/pharmacies/{pharmacy_id}")
+async def api_get_bank_accounts(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to get bank accounts for a pharmacy - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-accounts/pharmacies/{pharmacy_id}"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch bank accounts")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/bank-accounts/{bank_account_id}")
+async def api_get_bank_account(request: Request, bank_account_id: int) -> JSONResponse:
+    """Proxy endpoint to get a specific bank account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-accounts/{bank_account_id}"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch bank account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-accounts")
+async def api_create_bank_account(request: Request) -> JSONResponse:
+    """Proxy endpoint to create a new bank account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    # Use X-API-Key as primary auth method (as per backend API spec)
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        bearer = request.session.get("auth_token") or ""
+        if bearer:
+            headers["Authorization"] = f"Bearer {bearer}"
+    
+    account_data = await request.json()
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-accounts"
+        resp = await client.post(url, json=account_data, headers=headers)
+        
+        # If X-API-Key fails, try Bearer token as fallback
+        if resp.status_code == 401 and headers.get("X-API-Key"):
+            bearer = request.session.get("auth_token") or ""
+            if bearer:
+                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
+                resp = await client.post(url, json=account_data, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to create bank account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.put("/api/bank-accounts/{bank_account_id}")
+async def api_update_bank_account(request: Request, bank_account_id: int) -> JSONResponse:
+    """Proxy endpoint to update a bank account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    # Use X-API-Key as primary auth method (as per backend API spec)
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        bearer = request.session.get("auth_token") or ""
+        if bearer:
+            headers["Authorization"] = f"Bearer {bearer}"
+    
+    account_data = await request.json()
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-accounts/{bank_account_id}"
+        resp = await client.put(url, json=account_data, headers=headers)
+        
+        # If X-API-Key fails, try Bearer token as fallback
+        if resp.status_code == 401 and headers.get("X-API-Key"):
+            bearer = request.session.get("auth_token") or ""
+            if bearer:
+                alt_headers = {"Authorization": f"Bearer {bearer}", "Content-Type": "application/json"}
+                resp = await client.put(url, json=account_data, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to update bank account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.delete("/api/bank-accounts/{bank_account_id}")
+async def api_delete_bank_account(request: Request, bank_account_id: int) -> JSONResponse:
+    """Proxy endpoint to soft delete (deactivate) a bank account - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-accounts/{bank_account_id}"
+        resp = await client.delete(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.delete(url, headers=alt_headers)
+    
+    if resp.status_code not in [200, 204]:
+        error_detail = (
+            resp.json().get("detail", "Failed to delete bank account")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    if resp.status_code == 204:
+        return JSONResponse({"message": "Bank account deleted successfully"})
+    
+    return JSONResponse(resp.json())
+
+
+def preprocess_csv_file(file_content: bytes, filename: str) -> bytes:
+    """
+    Preprocess CSV to strip BOM and whitespace from headers only.
+    
+    IMPORTANT: DO NOT transform amounts! The CSV already has the correct sign convention:
+    - Positive amounts = INFLOWS (money coming in)
+    - Negative amounts = OUTFLOWS (money going out)
+    
+    The "DR" and "CR" in EFTPOS descriptions are just reference codes, NOT transaction direction indicators.
+    """
+    try:
+        # Decode and strip BOM if present
+        content_str = file_content.decode('utf-8-sig')
+        input_file = io.StringIO(content_str)
+        reader = csv.DictReader(input_file)
+
+        # Normalize header names: trim whitespace and BOM, but keep original casing
+        normalized_fieldnames = {}
+        date_column_key = None
+        for field in reader.fieldnames:
+            normalized = field.strip().lstrip('\ufeff')
+            normalized_fieldnames[field] = normalized
+            if normalized.lower() == 'date':
+                date_column_key = field
+
+        # If no date column, return original content
+        if not date_column_key:
+            print(f"[WARNING] No 'Date' column found in CSV. Columns: {reader.fieldnames}")
+            return file_content
+
+        # Use normalized fieldnames in the output, preserving original values
+        output_fieldnames = [normalized_fieldnames.get(f, f) for f in reader.fieldnames]
+        output_file = io.StringIO()
+        writer = csv.DictWriter(output_file, fieldnames=output_fieldnames, lineterminator='\n')
+        writer.writeheader()
+
+        row_count = 0
+        positive_amounts = 0
+        negative_amounts = 0
+        amount_column = None
+        
+        # Find the amount column (case-insensitive)
+        for field in output_fieldnames:
+            if field.lower() == 'amount':
+                amount_column = field
+                break
+        
+        for row in reader:
+            # Build output row with normalized headers but ORIGINAL values (no transformation!)
+            output_row = {normalized_fieldnames.get(k, k): v for k, v in row.items()}
+            
+            # Track amounts for logging (but don't transform them!)
+            if amount_column and amount_column in output_row:
+                try:
+                    amount_str = output_row[amount_column].strip()
+                    if amount_str:
+                        amount_val = float(amount_str)
+                        if amount_val >= 0:
+                            positive_amounts += 1
+                        else:
+                            negative_amounts += 1
+                except (ValueError, TypeError):
+                    pass
+            
+            writer.writerow(output_row)
+            row_count += 1
+
+        print(f"[INFO] Preprocessed CSV rows (no date conversion): {row_count}")
+        print(f"[INFO] Output columns: {output_fieldnames}")
+        if amount_column:
+            print(f"[INFO] Amount column analysis: {positive_amounts} positive, {negative_amounts} negative")
+
+        return output_file.getvalue().encode('utf-8')
+
+    except Exception as e:
+        print(f"[WARNING] CSV preprocessing failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return file_content
+
+
+# Bank Imports API Endpoints
+@app.post("/api/bank-imports/preview")
+async def api_preview_bank_import(request: Request) -> JSONResponse:
+    """Proxy endpoint to preview a bank import - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    form_data = await request.form()
+    file = form_data.get("file")
+    pharmacy_id = form_data.get("pharmacy_id")
+    bank_account_id = form_data.get("bank_account_id")
+    
+    if not file or not pharmacy_id or not bank_account_id:
+        raise HTTPException(status_code=400, detail="Missing file, pharmacy_id, or bank_account_id")
+    
+    # Read file content
+    file_content = await file.read()
+    
+    # Preprocess CSV: strip BOM and normalize headers (backend handles DD/MM/YYYY dates directly)
+    processed_content = preprocess_csv_file(file_content, file.filename)
+    
+    # Debug: Log first few lines of processed content and sample amounts
+    try:
+        preview_lines = processed_content.decode('utf-8').split('\n')[:10]
+        print(f"[DEBUG] Processed CSV preview (first 10 lines): {preview_lines}")
+        
+        # Parse and show sample amounts
+        import csv as csv_module
+        import io
+        reader = csv_module.DictReader(io.StringIO(processed_content.decode('utf-8')))
+        sample_amounts = []
+        for i, row in enumerate(reader):
+            if i >= 10:
+                break
+            amount_str = row.get('Amount', '').strip()
+            desc = row.get('Description', '')[:50]
+            sample_amounts.append((amount_str, desc))
+        print(f"[DEBUG] Sample amounts from CSV: {sample_amounts[:5]}")
+    except Exception as e:
+        print(f"[DEBUG] Error logging CSV preview: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # Use text/csv content type for the processed file
+    files = {"file": (file.filename, processed_content, "text/csv")}
+    data = {
+        "pharmacy_id": pharmacy_id,
+        "bank_account_id": bank_account_id
+    }
+    
+    # Use X-API-Key header as per API specification
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    print(f"[DEBUG] Sending preview request to {API_BASE_URL}/bank-imports/preview")
+    print(f"[DEBUG] Data: pharmacy_id={pharmacy_id}, bank_account_id={bank_account_id}")
+    
+    async with httpx.AsyncClient(timeout=60) as client:
+        url = f"{API_BASE_URL}/bank-imports/preview"
+        resp = await client.post(url, files=files, data=data, headers=headers)
+        
+    print(f"[DEBUG] Response status: {resp.status_code}")
+    print(f"[DEBUG] Response body preview: {resp.text[:500] if resp.text else 'empty'}")
+    
+    # Debug: Check sample transactions from API response
+    try:
+        resp_data = resp.json()
+        if 'sample_transactions' in resp_data:
+            sample = resp_data['sample_transactions'][:5]
+            print(f"[DEBUG] API returned sample transactions with amounts:")
+            for txn in sample:
+                print(f"  Row {txn.get('row_number')}: {txn.get('description', '')[:40]} | Amount: {txn.get('amount')}")
+        if 'summary' in resp_data:
+            summary = resp_data['summary']
+            print(f"[DEBUG] API summary: total_in={summary.get('total_in')}, total_out={summary.get('total_out')}, count={summary.get('transaction_count')}")
+    except Exception as e:
+        print(f"[DEBUG] Error checking API response: {e}")
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to preview import")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-imports/confirm")
+async def api_confirm_bank_import(request: Request) -> JSONResponse:
+    """Proxy endpoint to confirm and import bank transactions - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    form_data = await request.form()
+    file = form_data.get("file")
+    pharmacy_id = form_data.get("pharmacy_id")
+    bank_account_id = form_data.get("bank_account_id")
+    file_name = form_data.get("file_name")
+    skip_duplicates = form_data.get("skip_duplicates", "true")  # Default to true
+    notes = form_data.get("notes")
+    
+    if not file or not pharmacy_id or not bank_account_id or not file_name:
+        raise HTTPException(status_code=400, detail="Missing file, pharmacy_id, bank_account_id, or file_name")
+    
+    # Read file content
+    file_content = await file.read()
+    
+    # Preprocess CSV: strip BOM and normalize headers (backend handles DD/MM/YYYY dates directly)
+    processed_content = preprocess_csv_file(file_content, file.filename)
+    
+    files = {"file": (file.filename, processed_content, file.content_type)}
+    data = {
+        "pharmacy_id": pharmacy_id,
+        "bank_account_id": bank_account_id,
+        "file_name": file_name,
+        "skip_duplicates": skip_duplicates
+    }
+    
+    # Add optional notes if provided
+    if notes:
+        data["notes"] = notes
+    
+    # Use X-API-Key header as per API specification
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=120) as client:
+        url = f"{API_BASE_URL}/bank-imports/confirm"
+        resp = await client.post(url, files=files, data=data, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to confirm import")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/bank-imports/pharmacies/{pharmacy_id}")
+async def api_get_bank_imports(request: Request, pharmacy_id: int, limit: int = 50, offset: int = 0) -> JSONResponse:
+    """Proxy endpoint to get bank import batches for a pharmacy - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    # Use X-API-Key header for the new batches endpoint
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-imports/pharmacies/{pharmacy_id}/batches"
+        params = {"limit": limit, "offset": offset}
+        resp = await client.get(url, headers=headers, params=params)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch bank import batches")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+# Bank Rules API Endpoints
+@app.get("/api/bank-rules/pharmacies/{pharmacy_id}/bank-rules")
+async def api_get_bank_rules(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to get bank rules for a pharmacy"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/pharmacies/{pharmacy_id}/bank-rules"
+        print(f"[DEBUG] Bank Rules API Call")
+        print(f"[DEBUG] URL: {url}")
+        print(f"[DEBUG] Headers: {headers}")
+        resp = await client.get(url, headers=headers)
+        print(f"[DEBUG] Response Status: {resp.status_code}")
+        print(f"[DEBUG] Response Headers: {dict(resp.headers)}")
+    
+    if resp.status_code != 200:
+        try:
+            error_json = resp.json()
+            error_detail = error_json.get("detail", f"Failed to fetch bank rules: {resp.status_code}")
+            print(f"[DEBUG] Error Response JSON: {error_json}")
+        except:
+            error_text = resp.text[:500] if resp.text else "No error message"
+            error_detail = f"Backend returned {resp.status_code}: {error_text}"
+            print(f"[DEBUG] Error Response Text: {error_text}")
+        
+        # For 500 errors, provide more helpful message
+        if resp.status_code == 500:
+            error_detail = f"Remote API server error (500). The bank rules endpoint may not be deployed yet or there's a server issue. Error: {error_detail}"
+        
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-rules/pharmacies/{pharmacy_id}/bank-rules")
+async def api_create_bank_rule(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to create a bank rule"""
+    body = await request.json()
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
+    
+    print(f"[DEBUG] Create Bank Rule - pharmacy_id: {pharmacy_id}")
+    print(f"[DEBUG] Request body keys: {list(body.keys()) if isinstance(body, dict) else 'Not a dict'}")
+    print(f"[DEBUG] Request body: {body}")
+    
+    # Validate required fields
+    if not body.get("name"):
+        raise HTTPException(status_code=422, detail="Rule name is required")
+    if not body.get("type"):
+        raise HTTPException(status_code=422, detail="Rule type is required")
+    if not body.get("conditions") or len(body.get("conditions", [])) == 0:
+        raise HTTPException(status_code=422, detail="At least one condition is required")
+    if not body.get("allocate") or len(body.get("allocate", [])) == 0:
+        raise HTTPException(status_code=422, detail="At least one allocation is required")
+    
+    # Prepare body - ensure pharmacy_id is included (API validation requires it despite being in path)
+    body_to_send = body.copy() if isinstance(body, dict) else body
+    if isinstance(body_to_send, dict):
+        # Ensure pharmacy_id is in body (API validation requires it)
+        body_to_send["pharmacy_id"] = int(pharmacy_id)
+        
+        # Ensure contact_name is None (not empty string) for proper JSON serialization
+        if body_to_send.get("contact_name") == "" or body_to_send.get("contact_name") is None:
+            body_to_send["contact_name"] = None
+        
+        # Ensure name is a non-empty string
+        if not body_to_send.get("name") or not isinstance(body_to_send.get("name"), str):
+            raise HTTPException(status_code=422, detail="Rule name must be a non-empty string")
+        
+        # Ensure type is valid
+        if body_to_send.get("type") not in ["receive", "spend", "transfer"]:
+            raise HTTPException(status_code=422, detail="Rule type must be 'receive', 'spend', or 'transfer'")
+        
+        print(f"[DEBUG] Prepared body with pharmacy_id: {body_to_send.get('pharmacy_id')}")
+    
+    # Validate data types before sending
+    if isinstance(body_to_send, dict):
+        # Ensure pharmacy_id is an integer
+        if "pharmacy_id" in body_to_send:
+            try:
+                body_to_send["pharmacy_id"] = int(body_to_send["pharmacy_id"])
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=422, detail="pharmacy_id must be an integer")
+        
+        # Ensure priority is an integer
+        if "priority" in body_to_send:
+            try:
+                body_to_send["priority"] = int(body_to_send["priority"])
+            except (ValueError, TypeError):
+                body_to_send["priority"] = 100  # Default
+        
+        # Validate allocate array
+        if "allocate" in body_to_send and isinstance(body_to_send["allocate"], list):
+            for alloc in body_to_send["allocate"]:
+                if isinstance(alloc, dict):
+                    if "account_id" in alloc:
+                        alloc["account_id"] = int(alloc["account_id"])
+                    if "percent" in alloc:
+                        alloc["percent"] = float(alloc["percent"])
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/pharmacies/{pharmacy_id}/bank-rules"
+        print(f"[DEBUG] Calling: {url}")
+        print(f"[DEBUG] Headers: {headers}")
+        print(f"[DEBUG] Body to send (keys): {list(body_to_send.keys()) if isinstance(body_to_send, dict) else 'Not a dict'}")
+        print(f"[DEBUG] Body pharmacy_id: {body_to_send.get('pharmacy_id') if isinstance(body_to_send, dict) else 'N/A'}")
+        print(f"[DEBUG] Body structure: {body_to_send}")
+        
+        try:
+            resp = await client.post(url, headers=headers, json=body_to_send)
+        except Exception as e:
+            print(f"[DEBUG] Exception making request: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to connect to remote API: {str(e)}")
+    
+    print(f"[DEBUG] Response status: {resp.status_code}")
+    print(f"[DEBUG] Response headers: {dict(resp.headers)}")
+    
+    if resp.status_code not in [200, 201]:
+        # Try to get full response text for debugging
+        response_text = ""
+        try:
+            response_text = resp.text
+            print(f"[DEBUG] Full response text (first 2000 chars): {response_text[:2000]}")
+            print(f"[DEBUG] Full response text length: {len(response_text)}")
+        except Exception as text_error:
+            print(f"[DEBUG] Could not get response text: {text_error}")
+            
+        error_detail = "Failed to create bank rule"
+        try:
+            # Try to parse as JSON first
+            if resp.headers.get("content-type", "").startswith("application/json"):
+                error_json = resp.json()
+                print(f"[DEBUG] Error JSON: {error_json}")
+                print(f"[DEBUG] Error JSON type: {type(error_json)}")
+                
+                # Handle different error formats
+                if isinstance(error_json, dict):
+                    # FastAPI validation errors might be in 'detail' as a list
+                    if "detail" in error_json:
+                        detail = error_json["detail"]
+                        if isinstance(detail, list):
+                            # Validation error list - extract messages
+                            error_messages = []
+                            for item in detail:
+                                if isinstance(item, dict):
+                                    loc = item.get("loc", [])
+                                    msg = item.get("msg", "")
+                                    error_messages.append(f"{'.'.join(str(x) for x in loc)}: {msg}")
+                                else:
+                                    error_messages.append(str(item))
+                            error_detail = "; ".join(error_messages) if error_messages else str(detail)
+                        elif isinstance(detail, str):
+                            error_detail = detail
+                        else:
+                            error_detail = str(detail)
+                    else:
+                        error_detail = error_json.get("message") or error_json.get("error") or str(error_json)
+                elif isinstance(error_json, list):
+                    # Array of errors
+                    error_detail = "; ".join(str(item) for item in error_json)
+                else:
+                    error_detail = str(error_json)
+            else:
+                error_text = resp.text[:500]  # Limit error text length
+                error_detail = f"Backend returned {resp.status_code}: {error_text}"
+        except Exception as e:
+            error_detail = f"Backend returned {resp.status_code}. Could not parse error: {str(e)}"
+            print(f"[DEBUG] Exception parsing error: {e}")
+        
+        print(f"[DEBUG] Error detail: {error_detail}")
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.put("/api/bank-rules/bank-rules/{rule_id}")
+async def api_update_bank_rule(request: Request, rule_id: int) -> JSONResponse:
+    """Proxy endpoint to update a bank rule"""
+    body = await request.json()
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
+    
+    print(f"[DEBUG] Update Bank Rule - rule_id: {rule_id}")
+    print(f"[DEBUG] Request body: {body}")
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/bank-rules/{rule_id}"
+        print(f"[DEBUG] Calling: {url}")
+        resp = await client.put(url, headers=headers, json=body)
+    
+    print(f"[DEBUG] Response status: {resp.status_code}")
+    
+    if resp.status_code != 200:
+        error_detail = "Failed to update bank rule"
+        try:
+            if resp.headers.get("content-type", "").startswith("application/json"):
+                error_json = resp.json()
+                error_detail = error_json.get("detail") or error_json.get("message") or error_json.get("error") or str(error_json)
+            else:
+                error_text = resp.text[:500]  # Limit error text length
+                error_detail = f"Backend returned {resp.status_code}: {error_text}"
+        except Exception as e:
+            error_detail = f"Backend returned {resp.status_code}. Could not parse error: {str(e)}"
+        
+        print(f"[DEBUG] Error detail: {error_detail}")
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+# Unmatched Transactions API Endpoints
+@app.get("/api/bank-rules/pharmacies/{pharmacy_id}/reconciliation-summary")
+async def api_get_reconciliation_summary(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to get reconciliation summary (reconciled count, unmatched count, difference)"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/pharmacies/{pharmacy_id}/reconciliation-summary"
+        
+        print(f"[DEBUG] Fetching reconciliation summary - pharmacy_id: {pharmacy_id}")
+        print(f"[DEBUG] URL: {url}")
+        
+        resp = await client.get(url, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch reconciliation summary")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.get("/api/bank-rules/pharmacies/{pharmacy_id}/bank-transactions/unmatched")
+async def api_get_unmatched_transactions(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to get unmatched transactions"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    # Forward any query parameters from the request to the backend API
+    query_params = dict(request.query_params)
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/pharmacies/{pharmacy_id}/bank-transactions/unmatched"
+        # Add query parameters if any
+        if query_params:
+            url += "?" + "&".join([f"{k}={v}" for k, v in query_params.items()])
+        
+        print(f"[DEBUG] Fetching unmatched transactions - pharmacy_id: {pharmacy_id}")
+        print(f"[DEBUG] URL: {url}")
+        print(f"[DEBUG] Query params: {query_params}")
+        
+        resp = await client.get(url, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch unmatched transactions")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    data = resp.json()
+    
+    # Log statistics about the response
+    if isinstance(data, list):
+        total_count = len(data)
+        positive_count = sum(1 for tx in data if isinstance(tx, dict) and tx.get("amount", 0) > 0)
+        negative_count = sum(1 for tx in data if isinstance(tx, dict) and tx.get("amount", 0) < 0)
+        zero_count = sum(1 for tx in data if isinstance(tx, dict) and tx.get("amount", 0) == 0)
+        print(f"[DEBUG] Unmatched transactions response: total={total_count}, positive={positive_count}, negative={negative_count}, zero={zero_count}")
+    elif isinstance(data, dict) and "items" in data:
+        items = data.get("items", [])
+        total_count = len(items)
+        positive_count = sum(1 for tx in items if isinstance(tx, dict) and tx.get("amount", 0) > 0)
+        negative_count = sum(1 for tx in items if isinstance(tx, dict) and tx.get("amount", 0) < 0)
+        zero_count = sum(1 for tx in items if isinstance(tx, dict) and tx.get("amount", 0) == 0)
+        print(f"[DEBUG] Unmatched transactions response: total={total_count}, positive={positive_count}, negative={negative_count}, zero={zero_count}")
+    
+    return JSONResponse(data)
+
+
+@app.post("/api/bank-rules/bank-import-batches/{batch_id}/apply-rules")
+async def api_apply_rules(request: Request, batch_id: int) -> JSONResponse:
+    """Proxy endpoint to apply rules to a batch"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    print(f"[DEBUG] Apply Rules - batch_id: {batch_id}")
+    
+    try:
+        # Increased timeout to 120 seconds (2 minutes) as applying rules to a batch can be a long-running operation
+        async with httpx.AsyncClient(timeout=120) as client:
+            url = f"{API_BASE_URL}/bank-rules/bank-import-batches/{batch_id}/apply-rules"
+            print(f"[DEBUG] Calling: {url}")
+            print(f"[DEBUG] Headers: {headers}")
+            resp = await client.post(url, headers=headers)
+    except httpx.TimeoutException:
+        print(f"[DEBUG] Timeout calling apply-rules endpoint (exceeded 120 seconds)")
+        raise HTTPException(
+            status_code=504, 
+            detail="Request to backend API timed out after 2 minutes. The batch may have too many transactions, or the backend API may be experiencing performance issues. Please try again or contact support if the issue persists."
+        )
+    except httpx.ConnectError as e:
+        print(f"[DEBUG] Connection error: {e}")
+        raise HTTPException(status_code=503, detail=f"Failed to connect to backend API: {str(e)}")
+    except Exception as e:
+        print(f"[DEBUG] Exception making request: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to connect to remote API: {str(e)}")
+    
+    print(f"[DEBUG] Response status: {resp.status_code}")
+    print(f"[DEBUG] Response headers: {dict(resp.headers)}")
+    
+    if resp.status_code != 200:
+        error_detail = "Failed to apply rules"
+        try:
+            if resp.headers.get("content-type", "").startswith("application/json"):
+                error_json = resp.json()
+                error_detail = error_json.get("detail") or error_json.get("message") or error_json.get("error") or str(error_json)
+                print(f"[DEBUG] Error Response JSON: {error_json}")
+            else:
+                error_text = resp.text[:500] if resp.text else "No error message"
+                error_detail = f"Backend returned {resp.status_code}: {error_text}"
+                print(f"[DEBUG] Error Response Text: {error_text}")
+        except Exception as e:
+            print(f"[DEBUG] Exception parsing error response: {e}")
+            error_text = resp.text[:500] if resp.text else "No error message"
+            error_detail = f"Backend returned {resp.status_code}: {error_text}"
+        
+        # For 500 errors, provide more helpful message
+        if resp.status_code == 500:
+            error_detail = f"Remote API server error (500). This may indicate a bug in the backend API. Error details: {error_detail}"
+        
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    try:
+        return JSONResponse(resp.json())
+    except Exception as e:
+        print(f"[DEBUG] Exception parsing success response: {e}")
+        raise HTTPException(status_code=500, detail=f"Backend returned invalid JSON response: {str(e)}")
+
+
+@app.post("/api/bank-rules/bank-import-batches/{batch_id}/generate-ai-suggestions")
+async def api_generate_ai_suggestions(request: Request, batch_id: int) -> JSONResponse:
+    """Proxy endpoint to generate AI suggestions"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=60) as client:
+        url = f"{API_BASE_URL}/bank-rules/bank-import-batches/{batch_id}/generate-ai-suggestions"
+        resp = await client.post(url, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to generate AI suggestions")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-rules/ai-suggestions/{suggestion_id}/accept")
+async def api_accept_ai_suggestion(request: Request, suggestion_id: int) -> JSONResponse:
+    """Proxy endpoint to accept an AI suggestion"""
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/ai-suggestions/{suggestion_id}/accept"
+        resp = await client.post(url, headers=headers, json=body)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to accept AI suggestion")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-rules/ai-suggestions/{suggestion_id}/reject")
+async def api_reject_ai_suggestion(request: Request, suggestion_id: int) -> JSONResponse:
+    """Proxy endpoint to reject an AI suggestion"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/ai-suggestions/{suggestion_id}/reject"
+        resp = await client.post(url, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to reject AI suggestion")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-rules/bank-transactions/{transaction_id}/apply-rules")
+async def api_apply_rules_to_transaction(request: Request, transaction_id: int) -> JSONResponse:
+    """Proxy endpoint to apply rules to an individual transaction"""
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/bank-rules/bank-transactions/{transaction_id}/apply-rules"
+        resp = await client.post(url, headers=headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to apply rules to transaction")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+@app.post("/api/bank-statement-lines/{line_id}/manual-classify")
+async def api_manual_classify(request: Request, line_id: int) -> JSONResponse:
+    """Proxy endpoint to manually classify a statement line"""
+    body = await request.json()
+    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"} if API_KEY else {"Content-Type": "application/json"}
+    
+    import json
+    print("=" * 80)
+    print("[DEBUG] MANUAL CLASSIFY REQUEST")
+    print("=" * 80)
+    print(f"Line ID: {line_id}")
+    print(f"Request Body:")
+    print(json.dumps(body, indent=2))
+    print(f"Headers (excluding API key): {dict((k, v) for k, v in headers.items() if k != 'X-API-Key')}")
+    print("=" * 80)
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        # Try the bank-transactions endpoint first (matches apply-rules pattern)
+        url1 = f"{API_BASE_URL}/bank-rules/bank-transactions/{line_id}/manual-classify"
+        print(f"[DEBUG] Trying endpoint 1: {url1}")
+        resp1 = await client.post(url1, headers=headers, json=body)
+        print(f"[DEBUG] Endpoint 1 response status: {resp1.status_code}")
+        
+        if resp1.status_code == 200:
+            print(f"[DEBUG] Success with bank-transactions endpoint")
+            try:
+                response_json = resp1.json()
+                print(f"[DEBUG] Response:")
+                print(json.dumps(response_json, indent=2))
+            except:
+                print(f"[DEBUG] Response (non-JSON): {resp1.text[:500]}")
+            return JSONResponse(resp1.json())
+        
+        # If that fails, try the bank-statement-lines endpoint
+        if resp1.status_code == 404:
+            print(f"[DEBUG] Endpoint 1 returned 404, trying bank-statement-lines endpoint")
+            url2 = f"{API_BASE_URL}/bank-statement-lines/{line_id}/manual-classify"
+            print(f"[DEBUG] Trying endpoint 2: {url2}")
+            resp2 = await client.post(url2, headers=headers, json=body)
+            print(f"[DEBUG] Endpoint 2 response status: {resp2.status_code}")
+            
+            if resp2.status_code == 200:
+                print(f"[DEBUG] Success with bank-statement-lines endpoint")
+                try:
+                    response_json = resp2.json()
+                    print(f"[DEBUG] Response:")
+                    print(json.dumps(response_json, indent=2))
+                except:
+                    print(f"[DEBUG] Response (non-JSON): {resp2.text[:500]}")
+                return JSONResponse(resp2.json())
+            
+            # Use the second response for error handling
+            resp = resp2
+        else:
+            resp = resp1
+    
+    print(f"[DEBUG] Remote API response status: {resp.status_code}")
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to classify line")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        print(f"[DEBUG] Error detail: {error_detail}")
+        print(f"[DEBUG] Full response: {resp.text[:500]}")
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
+    
+    return JSONResponse(resp.json())
+
+
+# Accounts API Endpoint (if not exists)
+@app.get("/api/pharmacies/{pharmacy_id}/accounts")
+async def api_get_pharmacy_accounts(request: Request, pharmacy_id: int) -> JSONResponse:
+    """Proxy endpoint to get chart of accounts for a pharmacy - only accessible by admin users"""
+    if not _check_admin_access(request):
+        raise HTTPException(status_code=403, detail="Admin access restricted to admin users only")
+    
+    bearer = request.session.get("auth_token") or API_KEY or ""
+    headers = {"Authorization": f"Bearer {bearer}"} if bearer else {}
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        url = f"{API_BASE_URL}/pharmacies/{pharmacy_id}/accounts"
+        resp = await client.get(url, headers=headers)
+        
+        if resp.status_code == 401 and API_KEY:
+            alt_headers = {"X-API-Key": API_KEY}
+            resp = await client.get(url, headers=alt_headers)
+    
+    if resp.status_code != 200:
+        error_detail = (
+            resp.json().get("detail", "Failed to fetch accounts")
+            if resp.headers.get("content-type", "").startswith("application/json")
+            else f"Backend returned {resp.status_code}"
+        )
+        raise HTTPException(status_code=resp.status_code, detail=error_detail)
     
     return JSONResponse(resp.json())
 

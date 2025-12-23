@@ -200,16 +200,14 @@ if (window.api && typeof window.api.getDays === 'function') {
                 try {
                     // This endpoint is on our local backend, not the external API
                     // Use LOCAL_BACKEND_URL defined in auth.js (stored in window.LOCAL_BACKEND_URL)
-                    // Fallback to production backend if not set
+                    // Empty string '' means same-origin (valid for production)
                     let backendUrl = '';
-                    if (typeof window !== 'undefined' && window.LOCAL_BACKEND_URL) {
+                    if (typeof window !== 'undefined' && typeof window.LOCAL_BACKEND_URL === 'string') {
                         backendUrl = window.LOCAL_BACKEND_URL;
-                    } else if (typeof LOCAL_BACKEND_URL !== 'undefined' && LOCAL_BACKEND_URL) {
+                    } else if (typeof LOCAL_BACKEND_URL !== 'undefined' && typeof LOCAL_BACKEND_URL === 'string') {
                         backendUrl = LOCAL_BACKEND_URL;
-                    } else {
-                        // Fallback to production backend
-                        backendUrl = 'https://pharmasight-qdv0.onrender.com';
                     }
+                    // Empty string is valid - it means same-origin requests
                     
                     // Ensure backendUrl doesn't end with a slash
                     backendUrl = backendUrl.replace(/\/$/, '');

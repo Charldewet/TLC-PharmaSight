@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, HTTPException, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -79,6 +79,26 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
+# Mount webApp2 static files (JS, CSS, images)
+app.mount("/js", StaticFiles(directory="webApp2/js"), name="webapp2_js")
+app.mount("/img", StaticFiles(directory="webApp2/img"), name="webapp2_img")
+
+
+# Serve webApp2 CSS and JS files directly
+@app.get("/styles.css")
+def webapp2_styles():
+    return FileResponse("webApp2/styles.css", media_type="text/css")
+
+
+@app.get("/auth.js")
+def webapp2_auth():
+    return FileResponse("webApp2/auth.js", media_type="application/javascript")
+
+
+@app.get("/script.js")
+def webapp2_script():
+    return FileResponse("webApp2/script.js", media_type="application/javascript")
+
 
 def _auth_headers(request: Request) -> dict:
     """
@@ -96,7 +116,8 @@ def _auth_headers(request: Request) -> dict:
 @app.get("/", response_class=HTMLResponse)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "title": "Sign in", "error": None})
+    # Serve the new webApp2 login page
+    return FileResponse("webApp2/login.html", media_type="text/html")
 
 
 @app.post("/login")
@@ -268,60 +289,8 @@ async def mobile_get_pharmacies(request: Request, username: str = Query(...)) ->
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    username = request.session.get("username")
-    if not username:
-        return RedirectResponse(url="/login", status_code=303)
-
-    # Use canonical username exactly as stored; URL-encode for safety
-    path_username = quote(str(username).strip(), safe="")
-
-    user_token = request.session.get("auth_token")
-    api_key = API_KEY or ""
-    preferred_token = user_token or api_key
-    url = f"{API_BASE_URL}/users/{path_username}/pharmacies"
-
-    pharmacies = []
-    fetch_error = None
-    async with httpx.AsyncClient(timeout=15) as client:
-        candidate_headers = []
-        if preferred_token:
-            candidate_headers.append({"Authorization": f"Bearer {preferred_token}"})
-        # If the first attempt used the user token and we also have an API key, queue it next
-        if user_token and api_key:
-            candidate_headers.append({"Authorization": f"Bearer {api_key}"})
-        # Final fallback to X-API-Key for backward compatibility
-        if api_key:
-            candidate_headers.append({"X-API-Key": api_key})
-
-        for headers in candidate_headers:
-            resp = await client.get(url, headers=headers)
-            if resp.status_code == 200:
-                payload = resp.json() or {}
-                pharmacies = payload.get("pharmacies", [])
-                # Sort pharmacies so "TLC GROUP" always appears last
-                pharmacies.sort(key=lambda p: (
-                    p.get("pharmacy_name") or p.get("name") or ""
-                ).upper() == "TLC GROUP")
-                fetch_error = None
-                break
-            fetch_error = f"Failed to load pharmacies (status {resp.status_code})"
-
-    user_id = request.session.get("user_id")
-    # Check if user is admin (Charl user_id: 2, Amin user_id: 9, or username is "admin"/"charl"/"amin")
-    is_admin = user_id in [2, 9] or (username and username.lower() in ["charl", "admin", "amin"])
-
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "title": "Dashboard",
-            "username": username,
-            "user_id": user_id,
-            "is_charl": is_admin,  # Keep variable name for backwards compatibility
-            "pharmacies": pharmacies,
-            "error": fetch_error,
-        },
-    )
+    # Serve the new webApp2 dashboard (handles auth client-side)
+    return FileResponse("webApp2/index.html", media_type="text/html")
 
 
 @app.get("/api/days")

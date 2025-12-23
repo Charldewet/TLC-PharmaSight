@@ -219,18 +219,8 @@ class App {
         });
 
         this.router.register('admin', () => {
-            // TODO: Implement AdminScreen
-            const mainContent = document.querySelector('.content-area');
-            if (mainContent) {
-                mainContent.innerHTML = `
-                    <div class="dashboard-container">
-                        <div class="empty-state">
-                            <h2>Admin Panel</h2>
-                            <p>Admin functionality coming soon.</p>
-                        </div>
-                    </div>
-                `;
-            }
+            const screen = new AdminScreen();
+            screen.load();
         });
 
         // Initialize with dashboard

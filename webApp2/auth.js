@@ -2,17 +2,22 @@
 const API_BASE_URL = 'https://pharmacy-api-webservice.onrender.com';
 
 // Local backend URL for AI insights and other local endpoints
-// Detect localhost/IP for local dev; otherwise use the hosted backend
+// Detect localhost/IP for local dev; use same-origin for production to avoid CORS
 (function() {
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(hostname);
+    const isProduction = hostname.includes('pharmasight.co.za') || hostname.includes('onrender.com');
     
     if (isLocalhost || isLocalIP) {
         // Point to local backend (default uvicorn port 8000)
         window.LOCAL_BACKEND_URL = `http://${hostname}:8000`;
+    } else if (isProduction) {
+        // Use same-origin (empty string) for production to avoid CORS issues
+        // The API is served from the same domain as the web app
+        window.LOCAL_BACKEND_URL = '';
     } else {
-        // Hosted backend for production
+        // Fallback to hosted backend
         window.LOCAL_BACKEND_URL = 'https://pharmasight-qdv0.onrender.com';
     }
 })();

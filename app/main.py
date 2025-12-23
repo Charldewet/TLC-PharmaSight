@@ -100,6 +100,23 @@ def webapp2_script():
     return FileResponse("webApp2/script.js", media_type="application/javascript")
 
 
+@app.get("/index.html", response_class=HTMLResponse)
+def webapp2_index():
+    # Serve webApp2 dashboard when accessed directly as index.html
+    return FileResponse("webApp2/index.html", media_type="text/html")
+
+
+@app.get("/login.html", response_class=HTMLResponse)
+def webapp2_login_html():
+    # Serve webApp2 login page when accessed directly as login.html
+    return FileResponse("webApp2/login.html", media_type="text/html")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("webApp2/img/favicon.png", media_type="image/png")
+
+
 def _auth_headers(request: Request) -> dict:
     """
     Default auth headers for standard (non-admin) proxy calls.

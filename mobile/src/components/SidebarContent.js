@@ -9,6 +9,7 @@ import { typography } from '../styles/typography';
 import {
   DashboardIcon,
   DailySummaryIcon,
+  MonthlySummaryIcon,
   StockManagementIcon,
   SearchIcon,
   UsersIcon,
@@ -34,7 +35,7 @@ const SidebarContent = (props) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', Icon: DashboardIcon, route: 'Dashboard' },
     { id: 'daily-summary', label: 'Daily Summary', Icon: DailySummaryIcon, route: 'DailySummary' },
-    { id: 'monthly-summary', label: 'Monthly Summary', Icon: DailySummaryIcon, route: 'MonthlySummary' },
+    { id: 'monthly-summary', label: 'Monthly Summary', Icon: MonthlySummaryIcon, route: 'MonthlySummary' },
     { id: 'stock-management', label: 'Stock Management', Icon: StockManagementIcon, route: 'StockManagement' },
     { id: 'stock-queries', label: 'Stock Queries', Icon: SearchIcon, route: 'StockQueries' },
     { id: 'debtor-tools', label: 'Debtor Tools', Icon: UsersIcon, route: 'DebtorTools' },

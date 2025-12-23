@@ -15,6 +15,7 @@ const DashboardCard = ({
   threshold = null, // Custom threshold for percentage coloring (e.g., 75 means < 75% = green, >= 75% = orange)
   showWarning = false, // Show warning indicator (orange square with warning icon)
   onPress,
+  onLongPress,
 }) => {
   const cardStyles = [styles.card];
 
@@ -128,12 +129,14 @@ const DashboardCard = ({
     </>
   );
 
-  if (onPress) {
+  if (onPress || onLongPress) {
     return (
       <TouchableOpacity 
         style={cardStyles} 
         onPress={onPress}
+        onLongPress={onLongPress}
         activeOpacity={0.7}
+        delayLongPress={500}
       >
         {CardContent}
       </TouchableOpacity>

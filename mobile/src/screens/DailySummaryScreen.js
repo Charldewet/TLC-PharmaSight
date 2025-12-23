@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -57,7 +57,37 @@ const DailySummaryScreen = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showBestSellersModal, setShowBestSellersModal] = useState(false);
   const [showLowGPModal, setShowLowGPModal] = useState(false);
+  const [showTurnoverDetail, setShowTurnoverDetail] = useState(false);
+  const [turnoverCardLayout, setTurnoverCardLayout] = useState(null);
+  const [turnoverChartData, setTurnoverChartData] = useState([]);
+  const [turnoverChartLoading, setTurnoverChartLoading] = useState(false);
+  const [selectedTurnoverBarDate, setSelectedTurnoverBarDate] = useState(null);
+  
+  const [showGpDetail, setShowGpDetail] = useState(false);
+  const [gpCardLayout, setGpCardLayout] = useState(null);
+  const [gpChartData, setGpChartData] = useState([]);
+  const [gpChartLoading, setGpChartLoading] = useState(false);
+  const [selectedGpBarDate, setSelectedGpBarDate] = useState(null);
+  
+  const [showPurchasesDetail, setShowPurchasesDetail] = useState(false);
+  const [purchasesCardLayout, setPurchasesCardLayout] = useState(null);
+  const [purchasesChartData, setPurchasesChartData] = useState([]);
+  const [purchasesChartLoading, setPurchasesChartLoading] = useState(false);
+  const [selectedPurchasesBarDate, setSelectedPurchasesBarDate] = useState(null);
+  
+  const [showBasketDetail, setShowBasketDetail] = useState(false);
+  const [basketCardLayout, setBasketCardLayout] = useState(null);
+  const [basketChartData, setBasketChartData] = useState([]);
+  const [basketChartLoading, setBasketChartLoading] = useState(false);
+  const [selectedBasketBarDate, setSelectedBasketBarDate] = useState(null);
+  
   const [selectedDate, setSelectedDate] = useState(getToday());
+  
+  // Refs for measuring card positions
+  const turnoverCardRef = useRef(null);
+  const gpCardRef = useRef(null);
+  const purchasesCardRef = useRef(null);
+  const basketCardRef = useRef(null);
   
   // Daily summary data
   const [dailyData, setDailyData] = useState({
@@ -138,6 +168,208 @@ const DailySummaryScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error getting previous year data:', error);
       return null;
+    }
+  };
+
+  const loadTurnoverChartData = async () => {
+    if (!selectedPharmacy || !selectedDate || !authToken) return;
+
+    try {
+      setTurnoverChartLoading(true);
+      const pid = selectedPharmacy.pharmacy_id || selectedPharmacy.id;
+      const currentDate = new Date(selectedDate + 'T00:00:00');
+      
+      // Get last 7 days including today (6 days ago through today)
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(currentDate);
+        date.setDate(date.getDate() - i);
+        days.push(date.toISOString().split('T')[0]);
+      }
+
+      // Fetch data for all days
+      const dataPromises = days.map(async (date) => {
+        const month = date.slice(0, 7);
+        const daysResp = await apiFetch(`${API_BASE_URL}/api/days?pid=${pid}&month=${month}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const daysData = daysResp.ok ? await daysResp.json() : [];
+        const dayData = daysData.find(d => d.business_date === date) || null;
+        
+        // Get previous year same weekday data
+        const prevYearData = await getPreviousYearWeekdayData(date, pid);
+        
+        return {
+          date,
+          turnover: dayData ? Number(dayData.turnover || 0) : 0,
+          prevYearTurnover: prevYearData ? Number(prevYearData.turnover || 0) : 0,
+        };
+      });
+
+      const results = await Promise.all(dataPromises);
+      setTurnoverChartData(results);
+    } catch (error) {
+      console.error('Error loading turnover chart data:', error);
+      setTurnoverChartData([]);
+    } finally {
+      setTurnoverChartLoading(false);
+    }
+  };
+
+  const loadGpChartData = async () => {
+    if (!selectedPharmacy || !selectedDate || !authToken) return;
+
+    try {
+      setGpChartLoading(true);
+      const pid = selectedPharmacy.pharmacy_id || selectedPharmacy.id;
+      const currentDate = new Date(selectedDate + 'T00:00:00');
+      
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(currentDate);
+        date.setDate(date.getDate() - i);
+        days.push(date.toISOString().split('T')[0]);
+      }
+
+      const dataPromises = days.map(async (date) => {
+        const month = date.slice(0, 7);
+        const daysResp = await apiFetch(`${API_BASE_URL}/api/days?pid=${pid}&month=${month}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const daysData = daysResp.ok ? await daysResp.json() : [];
+        const dayData = daysData.find(d => d.business_date === date) || null;
+        
+        const turnover = dayData ? Number(dayData.turnover || 0) : 0;
+        const gpValue = dayData ? Number(dayData.gp_value || 0) : 0;
+        const gpPercent = turnover > 0 ? (gpValue / turnover) * 100 : 0;
+        
+        const prevYearData = await getPreviousYearWeekdayData(date, pid);
+        const prevYearTurnover = prevYearData ? Number(prevYearData.turnover || 0) : 0;
+        const prevYearGpValue = prevYearData ? Number(prevYearData.gp_value || 0) : 0;
+        const prevYearGpPercent = prevYearTurnover > 0 ? (prevYearGpValue / prevYearTurnover) * 100 : 0;
+        
+        return {
+          date,
+          gpPercent,
+          prevYearGpPercent,
+        };
+      });
+
+      const results = await Promise.all(dataPromises);
+      setGpChartData(results);
+    } catch (error) {
+      console.error('Error loading GP chart data:', error);
+      setGpChartData([]);
+    } finally {
+      setGpChartLoading(false);
+    }
+  };
+
+  const loadPurchasesChartData = async () => {
+    if (!selectedPharmacy || !selectedDate || !authToken) return;
+
+    try {
+      setPurchasesChartLoading(true);
+      const pid = selectedPharmacy.pharmacy_id || selectedPharmacy.id;
+      const currentDate = new Date(selectedDate + 'T00:00:00');
+      
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(currentDate);
+        date.setDate(date.getDate() - i);
+        days.push(date.toISOString().split('T')[0]);
+      }
+
+      const dataPromises = days.map(async (date) => {
+        const month = date.slice(0, 7);
+        const daysResp = await apiFetch(`${API_BASE_URL}/api/days?pid=${pid}&month=${month}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const daysData = daysResp.ok ? await daysResp.json() : [];
+        const dayData = daysData.find(d => d.business_date === date) || null;
+        
+        const purchases = dayData ? Number(dayData.purchases || dayData.daily_purchases || dayData.purchases_value || 0) : 0;
+        
+        const prevYearData = await getPreviousYearWeekdayData(date, pid);
+        const prevYearPurchases = prevYearData ? Number(prevYearData.purchases || prevYearData.daily_purchases || prevYearData.purchases_value || 0) : 0;
+        
+        return {
+          date,
+          purchases,
+          prevYearPurchases,
+        };
+      });
+
+      const results = await Promise.all(dataPromises);
+      setPurchasesChartData(results);
+    } catch (error) {
+      console.error('Error loading purchases chart data:', error);
+      setPurchasesChartData([]);
+    } finally {
+      setPurchasesChartLoading(false);
+    }
+  };
+
+  const loadBasketChartData = async () => {
+    if (!selectedPharmacy || !selectedDate || !authToken) return;
+
+    try {
+      setBasketChartLoading(true);
+      const pid = selectedPharmacy.pharmacy_id || selectedPharmacy.id;
+      const currentDate = new Date(selectedDate + 'T00:00:00');
+      
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(currentDate);
+        date.setDate(date.getDate() - i);
+        days.push(date.toISOString().split('T')[0]);
+      }
+
+      const dataPromises = days.map(async (date) => {
+        const month = date.slice(0, 7);
+        const daysResp = await apiFetch(`${API_BASE_URL}/api/days?pid=${pid}&month=${month}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        const daysData = daysResp.ok ? await daysResp.json() : [];
+        const dayData = daysData.find(d => d.business_date === date) || null;
+        
+        const turnover = dayData ? Number(dayData.turnover || 0) : 0;
+        const transactionCount = Number(
+          dayData?.transaction_count || 
+          dayData?.transactions || 
+          dayData?.txn_count || 
+          dayData?.num_transactions ||
+          dayData?.sales_transactions ||
+          0
+        );
+        const basket = transactionCount > 0 ? turnover / transactionCount : 0;
+        
+        const prevYearData = await getPreviousYearWeekdayData(date, pid);
+        const prevYearTurnover = prevYearData ? Number(prevYearData.turnover || 0) : 0;
+        const prevYearTransactionCount = Number(
+          prevYearData?.transaction_count || 
+          prevYearData?.transactions || 
+          prevYearData?.txn_count || 
+          prevYearData?.num_transactions ||
+          prevYearData?.sales_transactions ||
+          0
+        );
+        const prevYearBasket = prevYearTransactionCount > 0 ? prevYearTurnover / prevYearTransactionCount : 0;
+        
+        return {
+          date,
+          basket,
+          prevYearBasket,
+        };
+      });
+
+      const results = await Promise.all(dataPromises);
+      setBasketChartData(results);
+    } catch (error) {
+      console.error('Error loading basket chart data:', error);
+      setBasketChartData([]);
+    } finally {
+      setBasketChartLoading(false);
     }
   };
 
@@ -353,6 +585,59 @@ const DailySummaryScreen = ({ navigation }) => {
     });
   };
 
+  const formatCurrencyAbbreviated = (amount) => {
+    if (!amount && amount !== 0) return 'R0';
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return 'R0';
+    
+    if (num >= 1000000) {
+      return `R${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      return `R${Math.round(num / 1000)}k`;
+    }
+    return `R${Math.round(num)}`;
+  };
+
+  const formatDateFull = (dateString) => {
+    const date = new Date(dateString + 'T00:00:00');
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  const handleTurnoverBarPress = (date) => {
+    if (selectedTurnoverBarDate === date) {
+      setSelectedTurnoverBarDate(null);
+    } else {
+      setSelectedTurnoverBarDate(date);
+    }
+  };
+
+  const handleGpBarPress = (date) => {
+    if (selectedGpBarDate === date) {
+      setSelectedGpBarDate(null);
+    } else {
+      setSelectedGpBarDate(date);
+    }
+  };
+
+  const handlePurchasesBarPress = (date) => {
+    if (selectedPurchasesBarDate === date) {
+      setSelectedPurchasesBarDate(null);
+    } else {
+      setSelectedPurchasesBarDate(date);
+    }
+  };
+
+  const handleBasketBarPress = (date) => {
+    if (selectedBasketBarDate === date) {
+      setSelectedBasketBarDate(null);
+    } else {
+      setSelectedBasketBarDate(date);
+    }
+  };
+
   const getDatePickerButtonText = () => {
     if (!selectedDate) return 'Select Date';
     // Show short date format: "Monday, 15 Jan" or just "15 Jan"
@@ -511,40 +796,89 @@ const DailySummaryScreen = ({ navigation }) => {
 
         {/* Main Metrics Cards */}
         <View style={styles.metricsGrid}>
-          <View style={styles.metricCardWrapper}>
+          <View 
+            ref={turnoverCardRef}
+            style={[styles.metricCardWrapper, showTurnoverDetail && styles.turnoverCardHidden]}
+          >
             <DashboardCard
               title="Turnover"
               value={dailyData.turnover !== null ? formatMoney(dailyData.turnover) : '—'}
               currency="R"
               percentage={dailyData.turnoverPercentage}
               comparison={dailyData.turnoverComparison}
+              onLongPress={() => {
+                // Measure the card position before showing the overlay
+                if (turnoverCardRef.current) {
+                  turnoverCardRef.current.measureInWindow((x, y, width, height) => {
+                    setTurnoverCardLayout({ x, y, width, height });
+                    setShowTurnoverDetail(true);
+                    loadTurnoverChartData();
+                  });
+                }
+              }}
             />
           </View>
           
-          <View style={styles.metricCardWrapper}>
+          <View 
+            ref={gpCardRef}
+            style={[styles.metricCardWrapper, showGpDetail && styles.turnoverCardHidden]}
+          >
             <DashboardCard
               title="GP%"
               value={dailyData.gpPercent !== null ? dailyData.gpPercent.toFixed(1) : '—'}
               currency="%"
               comparison={dailyData.gpValue !== null ? `GP: R ${formatMoney(dailyData.gpValue)}` : null}
+              onLongPress={() => {
+                if (gpCardRef.current) {
+                  gpCardRef.current.measureInWindow((x, y, width, height) => {
+                    setGpCardLayout({ x, y, width, height });
+                    setShowGpDetail(true);
+                    loadGpChartData();
+                  });
+                }
+              }}
             />
           </View>
           
-          <View style={styles.metricCardWrapper}>
+          <View 
+            ref={purchasesCardRef}
+            style={[styles.metricCardWrapper, showPurchasesDetail && styles.turnoverCardHidden]}
+          >
             <DashboardCard
               title="Purchases"
               value={dailyData.purchases !== null ? formatMoney(dailyData.purchases) : '—'}
               currency="R"
               comparison={dailyData.costOfSales !== null ? `Cost of Sales: R ${formatMoney(dailyData.costOfSales)}` : null}
+              onLongPress={() => {
+                if (purchasesCardRef.current) {
+                  purchasesCardRef.current.measureInWindow((x, y, width, height) => {
+                    setPurchasesCardLayout({ x, y, width, height });
+                    setShowPurchasesDetail(true);
+                    loadPurchasesChartData();
+                  });
+                }
+              }}
             />
           </View>
           
-          <View style={styles.metricCardWrapper}>
+          <View 
+            ref={basketCardRef}
+            style={[styles.metricCardWrapper, showBasketDetail && styles.turnoverCardHidden]}
+          >
             <DashboardCard
               title="Basket"
               value={dailyData.basket !== null ? formatMoney(dailyData.basket) : '—'}
               currency="R"
               comparison={dailyData.transactions !== null ? `Transactions: ${dailyData.transactions}` : null}
+              onLongPress={() => {
+                if (basketCardRef.current) {
+                  basketCardRef.current.measureInWindow((x, y, width, height) => {
+                    setBasketCardLayout({ x, y, width, height });
+                    setShowBasketDetail(true);
+                    loadBasketChartData();
+                  });
+                }
+              }}
             />
           </View>
         </View>
@@ -766,6 +1100,557 @@ const DailySummaryScreen = ({ navigation }) => {
         pharmacyName={selectedPharmacy?.pharmacy_name || selectedPharmacy?.name || 'Unknown Pharmacy'}
       />
 
+      {/* Blur Overlay for Turnover Detail */}
+      {showTurnoverDetail && (
+        <>
+          {/* Blur layer */}
+          <TouchableOpacity
+            style={styles.blurOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowTurnoverDetail(false);
+              setSelectedTurnoverBarDate(null);
+            }}
+          >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 80 : 50}
+              tint="light"
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+          
+          {/* Black overlay - on top of blur, behind card */}
+          <TouchableOpacity
+            style={styles.blackOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowTurnoverDetail(false);
+              setSelectedTurnoverBarDate(null);
+            }}
+          />
+          
+          {/* Floating Turnover Card - positioned exactly where the original was */}
+          {turnoverCardLayout && (
+            <>
+              <View
+                style={[
+                  styles.floatingCard,
+                  {
+                    top: turnoverCardLayout.y,
+                    left: turnoverCardLayout.x,
+                    width: turnoverCardLayout.width,
+                  },
+                ]}
+              >
+                <DashboardCard
+                  title="Turnover"
+                  value={dailyData.turnover !== null ? formatMoney(dailyData.turnover) : '—'}
+                  currency="R"
+                  percentage={dailyData.turnoverPercentage}
+                  comparison={dailyData.turnoverComparison}
+                />
+              </View>
+              
+              {/* Chart Modal - positioned below the card */}
+              <View
+                style={[
+                  styles.chartModal,
+                  {
+                    top: turnoverCardLayout.y + turnoverCardLayout.height + 16,
+                  },
+                ]}
+              >
+                {turnoverChartLoading ? (
+                  <View style={styles.chartLoadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                ) : turnoverChartData.length > 0 ? (
+                  (() => {
+                    const maxValue = Math.max(
+                      ...turnoverChartData.map(d => Math.max(d.turnover, d.prevYearTurnover)),
+                      1
+                    );
+                    const isIncreased = (turnover, prevYearTurnover) => {
+                      return prevYearTurnover > 0 && turnover > prevYearTurnover;
+                    };
+                    
+                    // Calculate average turnover excluding days with zero trading
+                    const validDays = turnoverChartData.filter(d => d.turnover > 0);
+                    const averageTurnover = validDays.length > 0
+                      ? validDays.reduce((sum, d) => sum + d.turnover, 0) / validDays.length
+                      : 0;
+                    
+                    // Get selected value
+                    const selectedValue = selectedTurnoverBarDate
+                      ? turnoverChartData.find(d => d.date === selectedTurnoverBarDate)?.turnover || 0
+                      : averageTurnover;
+                    
+                    return (
+                      <View>
+                        {/* Chart Title */}
+                        <Text style={styles.chartTitle}>Last 7 days</Text>
+                        
+                        {/* Tooltip - Average/Selected Value */}
+                        <View style={styles.tooltipContainer}>
+                          <Text style={styles.tooltipLabel}>
+                            {selectedTurnoverBarDate ? formatDateFull(selectedTurnoverBarDate).toUpperCase() : 'AVERAGE'}
+                          </Text>
+                          <View style={styles.tooltipValueContainer}>
+                            <Text style={styles.tooltipCurrency}>R</Text>
+                            <Text style={styles.tooltipValue}>
+                              {formatMoney(selectedValue)}
+                            </Text>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.chartContent}>
+                          <View style={styles.barsContainer}>
+                          {turnoverChartData.map((item, index) => {
+                            const barHeight = maxValue > 0 ? (item.turnover / maxValue) * 100 : 0;
+                            const increased = isIncreased(item.turnover, item.prevYearTurnover);
+                            const barColor = increased ? '#59BA47' : '#FFFFFF'; // Green if increased, white otherwise
+                            const isSelected = selectedTurnoverBarDate === item.date;
+                            
+                            return (
+                              <TouchableOpacity
+                                key={item.date}
+                                onPress={() => handleTurnoverBarPress(item.date)}
+                                style={styles.barWrapper}
+                                activeOpacity={0.7}
+                              >
+                                <View style={styles.barContainer}>
+                                  <View
+                                    style={[
+                                      styles.chartBar,
+                                      {
+                                        height: Math.max(barHeight, 2),
+                                        backgroundColor: barColor,
+                                        borderWidth: isSelected ? 2 : 0,
+                                        borderColor: '#FFFFFF',
+                                      },
+                                    ]}
+                                  />
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                      </View>
+                    );
+                  })()
+                ) : null}
+              </View>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Blur Overlay for GP Detail */}
+      {showGpDetail && (
+        <>
+          <TouchableOpacity
+            style={styles.blurOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowGpDetail(false);
+              setSelectedGpBarDate(null);
+            }}
+          >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 80 : 50}
+              tint="light"
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.blackOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowGpDetail(false);
+              setSelectedGpBarDate(null);
+            }}
+          />
+          
+          {gpCardLayout && (
+            <>
+              <View
+                style={[
+                  styles.floatingCard,
+                  {
+                    top: gpCardLayout.y,
+                    left: gpCardLayout.x,
+                    width: gpCardLayout.width,
+                  },
+                ]}
+              >
+                <DashboardCard
+                  title="GP%"
+                  value={dailyData.gpPercent !== null ? dailyData.gpPercent.toFixed(1) : '—'}
+                  currency="%"
+                  comparison={dailyData.gpValue !== null ? `GP: R ${formatMoney(dailyData.gpValue)}` : null}
+                />
+              </View>
+              
+              <View
+                style={[
+                  styles.chartModal,
+                  {
+                    top: gpCardLayout.y + gpCardLayout.height + 16,
+                  },
+                ]}
+              >
+                {gpChartLoading ? (
+                  <View style={styles.chartLoadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                ) : gpChartData.length > 0 ? (
+                  (() => {
+                    const maxValue = Math.max(
+                      ...gpChartData.map(d => Math.max(d.gpPercent, d.prevYearGpPercent)),
+                      1
+                    );
+                    const isIncreased = (gpPercent, prevYearGpPercent) => {
+                      return prevYearGpPercent > 0 && gpPercent > prevYearGpPercent;
+                    };
+                    
+                    const validDays = gpChartData.filter(d => d.gpPercent > 0);
+                    const averageGp = validDays.length > 0
+                      ? validDays.reduce((sum, d) => sum + d.gpPercent, 0) / validDays.length
+                      : 0;
+                    
+                    const selectedValue = selectedGpBarDate
+                      ? gpChartData.find(d => d.date === selectedGpBarDate)?.gpPercent || 0
+                      : averageGp;
+                    
+                    return (
+                      <View>
+                        <Text style={styles.chartTitle}>Last 7 days</Text>
+                        <View style={styles.tooltipContainer}>
+                          <Text style={styles.tooltipLabel}>
+                            {selectedGpBarDate ? formatDateFull(selectedGpBarDate).toUpperCase() : 'AVERAGE'}
+                          </Text>
+                          <View style={styles.tooltipValueContainer}>
+                            <Text style={styles.tooltipValue}>
+                              {selectedValue.toFixed(1)}
+                            </Text>
+                            <Text style={[styles.tooltipCurrency, { marginLeft: 4, marginRight: 0 }]}>%</Text>
+                          </View>
+                        </View>
+                        <View style={styles.chartContent}>
+                          <View style={styles.barsContainer}>
+                            {gpChartData.map((item) => {
+                              const barHeight = maxValue > 0 ? (item.gpPercent / maxValue) * 100 : 0;
+                              const increased = isIncreased(item.gpPercent, item.prevYearGpPercent);
+                              const barColor = increased ? '#59BA47' : '#FFFFFF';
+                              const isSelected = selectedGpBarDate === item.date;
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={item.date}
+                                  onPress={() => handleGpBarPress(item.date)}
+                                  style={styles.barWrapper}
+                                  activeOpacity={0.7}
+                                >
+                                  <View style={styles.barContainer}>
+                                    <View
+                                      style={[
+                                        styles.chartBar,
+                                        {
+                                          height: Math.max(barHeight, 2),
+                                          backgroundColor: barColor,
+                                          borderWidth: isSelected ? 2 : 0,
+                                          borderColor: '#FFFFFF',
+                                        },
+                                      ]}
+                                    />
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()
+                ) : null}
+              </View>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Blur Overlay for Purchases Detail */}
+      {showPurchasesDetail && (
+        <>
+          <TouchableOpacity
+            style={styles.blurOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowPurchasesDetail(false);
+              setSelectedPurchasesBarDate(null);
+            }}
+          >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 80 : 50}
+              tint="light"
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.blackOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowPurchasesDetail(false);
+              setSelectedPurchasesBarDate(null);
+            }}
+          />
+          
+          {purchasesCardLayout && (
+            <>
+              <View
+                style={[
+                  styles.floatingCard,
+                  {
+                    top: purchasesCardLayout.y,
+                    left: purchasesCardLayout.x,
+                    width: purchasesCardLayout.width,
+                  },
+                ]}
+              >
+                <DashboardCard
+                  title="Purchases"
+                  value={dailyData.purchases !== null ? formatMoney(dailyData.purchases) : '—'}
+                  currency="R"
+                  comparison={dailyData.costOfSales !== null ? `Cost of Sales: R ${formatMoney(dailyData.costOfSales)}` : null}
+                />
+              </View>
+              
+              <View
+                style={[
+                  styles.chartModal,
+                  {
+                    top: purchasesCardLayout.y + purchasesCardLayout.height + 16,
+                  },
+                ]}
+              >
+                {purchasesChartLoading ? (
+                  <View style={styles.chartLoadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                ) : purchasesChartData.length > 0 ? (
+                  (() => {
+                    const maxValue = Math.max(
+                      ...purchasesChartData.map(d => Math.max(d.purchases, d.prevYearPurchases)),
+                      1
+                    );
+                    const isIncreased = (purchases, prevYearPurchases) => {
+                      return prevYearPurchases > 0 && purchases > prevYearPurchases;
+                    };
+                    
+                    const validDays = purchasesChartData.filter(d => d.purchases > 0);
+                    const averagePurchases = validDays.length > 0
+                      ? validDays.reduce((sum, d) => sum + d.purchases, 0) / validDays.length
+                      : 0;
+                    
+                    const selectedValue = selectedPurchasesBarDate
+                      ? purchasesChartData.find(d => d.date === selectedPurchasesBarDate)?.purchases || 0
+                      : averagePurchases;
+                    
+                    return (
+                      <View>
+                        <Text style={styles.chartTitle}>Last 7 days</Text>
+                        <View style={styles.tooltipContainer}>
+                          <Text style={styles.tooltipLabel}>
+                            {selectedPurchasesBarDate ? formatDateFull(selectedPurchasesBarDate).toUpperCase() : 'AVERAGE'}
+                          </Text>
+                          <View style={styles.tooltipValueContainer}>
+                            <Text style={styles.tooltipCurrency}>R</Text>
+                            <Text style={styles.tooltipValue}>
+                              {formatMoney(selectedValue)}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.chartContent}>
+                          <View style={styles.barsContainer}>
+                            {purchasesChartData.map((item) => {
+                              const barHeight = maxValue > 0 ? (item.purchases / maxValue) * 100 : 0;
+                              const increased = isIncreased(item.purchases, item.prevYearPurchases);
+                              const barColor = increased ? '#59BA47' : '#FFFFFF';
+                              const isSelected = selectedPurchasesBarDate === item.date;
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={item.date}
+                                  onPress={() => handlePurchasesBarPress(item.date)}
+                                  style={styles.barWrapper}
+                                  activeOpacity={0.7}
+                                >
+                                  <View style={styles.barContainer}>
+                                    <View
+                                      style={[
+                                        styles.chartBar,
+                                        {
+                                          height: Math.max(barHeight, 2),
+                                          backgroundColor: barColor,
+                                          borderWidth: isSelected ? 2 : 0,
+                                          borderColor: '#FFFFFF',
+                                        },
+                                      ]}
+                                    />
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()
+                ) : null}
+              </View>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Blur Overlay for Basket Detail */}
+      {showBasketDetail && (
+        <>
+          <TouchableOpacity
+            style={styles.blurOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowBasketDetail(false);
+              setSelectedBasketBarDate(null);
+            }}
+          >
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 80 : 50}
+              tint="light"
+              style={StyleSheet.absoluteFill}
+            />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.blackOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowBasketDetail(false);
+              setSelectedBasketBarDate(null);
+            }}
+          />
+          
+          {basketCardLayout && (
+            <>
+              <View
+                style={[
+                  styles.floatingCard,
+                  {
+                    top: basketCardLayout.y,
+                    left: basketCardLayout.x,
+                    width: basketCardLayout.width,
+                  },
+                ]}
+              >
+                <DashboardCard
+                  title="Basket"
+                  value={dailyData.basket !== null ? formatMoney(dailyData.basket) : '—'}
+                  currency="R"
+                  comparison={dailyData.transactions !== null ? `Transactions: ${dailyData.transactions}` : null}
+                />
+              </View>
+              
+              <View
+                style={[
+                  styles.chartModal,
+                  {
+                    top: basketCardLayout.y + basketCardLayout.height + 16,
+                  },
+                ]}
+              >
+                {basketChartLoading ? (
+                  <View style={styles.chartLoadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                ) : basketChartData.length > 0 ? (
+                  (() => {
+                    const maxValue = Math.max(
+                      ...basketChartData.map(d => Math.max(d.basket, d.prevYearBasket)),
+                      1
+                    );
+                    const isIncreased = (basket, prevYearBasket) => {
+                      return prevYearBasket > 0 && basket > prevYearBasket;
+                    };
+                    
+                    const validDays = basketChartData.filter(d => d.basket > 0);
+                    const averageBasket = validDays.length > 0
+                      ? validDays.reduce((sum, d) => sum + d.basket, 0) / validDays.length
+                      : 0;
+                    
+                    const selectedValue = selectedBasketBarDate
+                      ? basketChartData.find(d => d.date === selectedBasketBarDate)?.basket || 0
+                      : averageBasket;
+                    
+                    return (
+                      <View>
+                        <Text style={styles.chartTitle}>Last 7 days</Text>
+                        <View style={styles.tooltipContainer}>
+                          <Text style={styles.tooltipLabel}>
+                            {selectedBasketBarDate ? formatDateFull(selectedBasketBarDate).toUpperCase() : 'AVERAGE'}
+                          </Text>
+                          <View style={styles.tooltipValueContainer}>
+                            <Text style={styles.tooltipCurrency}>R</Text>
+                            <Text style={styles.tooltipValue}>
+                              {formatMoney(selectedValue)}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.chartContent}>
+                          <View style={styles.barsContainer}>
+                            {basketChartData.map((item) => {
+                              const barHeight = maxValue > 0 ? (item.basket / maxValue) * 100 : 0;
+                              const increased = isIncreased(item.basket, item.prevYearBasket);
+                              const barColor = increased ? '#59BA47' : '#FFFFFF';
+                              const isSelected = selectedBasketBarDate === item.date;
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={item.date}
+                                  onPress={() => handleBasketBarPress(item.date)}
+                                  style={styles.barWrapper}
+                                  activeOpacity={0.7}
+                                >
+                                  <View style={styles.barContainer}>
+                                    <View
+                                      style={[
+                                        styles.chartBar,
+                                        {
+                                          height: Math.max(barHeight, 2),
+                                          backgroundColor: barColor,
+                                          borderWidth: isSelected ? 2 : 0,
+                                          borderColor: '#FFFFFF',
+                                        },
+                                      ]}
+                                    />
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()
+                ) : null}
+              </View>
+            </>
+          )}
+        </>
+      )}
+
       {/* Loading Overlay for date/pharmacy changes */}
       <LoadingOverlay
         visible={dataLoading}
@@ -774,19 +1659,19 @@ const DailySummaryScreen = ({ navigation }) => {
 
       {/* Floating Hamburger Menu Button */}
       <View style={styles.floatingHamburgerContainer}>
-        <BlurView 
-          intensity={Platform.OS === 'ios' ? 80 : 50} 
-          tint="light" 
+        <LinearGradient
+          colors={[colors.accentPrimary, colors.accentPrimaryHover]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.hamburgerToggle}
-          reducedTransparencyFallbackColor="rgba(255, 255, 255, 0.6)"
         >
           <TouchableOpacity
             style={styles.hamburgerToggleBtn}
             onPress={() => navigation.openDrawer()}
           >
-            <HamburgerIcon size={28} color={colors.textPrimary} />
+            <HamburgerIcon size={28} color="#FFFFFF" />
           </TouchableOpacity>
-        </BlurView>
+        </LinearGradient>
       </View>
       </View>
     </GradientBackground>
@@ -842,18 +1727,17 @@ const styles = StyleSheet.create({
   hamburgerToggle: {
     borderRadius: 999,
     padding: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     overflow: 'hidden',
     // Shadow for iOS
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     // Shadow for Android
-    elevation: 4,
+    elevation: 8,
   },
   hamburgerToggleBtn: {
     flexDirection: 'column',
@@ -1126,6 +2010,117 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: 16,
+  },
+  blurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  blackOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    zIndex: 1000,
+  },
+  turnoverCardHidden: {
+    opacity: 0,
+  },
+  floatingCard: {
+    position: 'absolute',
+    zIndex: 1001,
+  },
+  chartModal: {
+    position: 'absolute',
+    left: '5%', // Centers 90% width: (100% - 90%) / 2 = 5%
+    width: '90%',
+    backgroundColor: 'rgba(255, 69, 9, 0.95)', // Orange (#FF4509) with 95% opacity
+    borderRadius: 20,
+    padding: 16,
+    zIndex: 1001,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  chartLoadingContainer: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chartTitle: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.semibold,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  tooltipContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingLeft: 0,
+  },
+  tooltipLabel: {
+    fontSize: 12,
+    fontFamily: typography.fontFamily.regular,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+    opacity: 0.9,
+  },
+  tooltipValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  tooltipCurrency: {
+    fontSize: 26,
+    fontFamily: typography.fontFamily.black,
+    fontWeight: typography.fontWeight.black,
+    color: '#FFFFFF',
+    marginRight: 4,
+    opacity: 0.9,
+  },
+  tooltipValue: {
+    fontSize: 26,
+    fontFamily: typography.fontFamily.black,
+    fontWeight: typography.fontWeight.black,
+    color: '#FFFFFF',
+  },
+  chartContent: {
+    width: '100%',
+    height: 100,
+    position: 'relative',
+  },
+  barsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    width: '100%',
+    height: 100,
+    paddingHorizontal: 4,
+  },
+  barWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: '100%',
+  },
+  barContainer: {
+    width: '80%',
+    height: 100,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  chartBar: {
+    width: '100%',
+    minHeight: 2,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF', // Default white, will be overridden for green bars
   },
 });
 

@@ -1143,19 +1143,19 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* Floating Hamburger Menu Button */}
       <View style={styles.floatingHamburgerContainer}>
-        <BlurView 
-          intensity={Platform.OS === 'ios' ? 100 : 70} 
-          tint="light" 
+        <LinearGradient
+          colors={[colors.accentPrimary, colors.accentPrimaryHover]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.hamburgerToggle}
-          reducedTransparencyFallbackColor="rgba(255, 255, 255, 0.9)"
         >
           <TouchableOpacity
             style={styles.hamburgerToggleBtn}
             onPress={() => navigation.openDrawer()}
           >
-            <HamburgerIcon size={28} color={colors.textPrimary} />
+            <HamburgerIcon size={28} color="#FFFFFF" />
           </TouchableOpacity>
-        </BlurView>
+        </LinearGradient>
       </View>
       </View>
     </GradientBackground>
@@ -1217,18 +1217,17 @@ const styles = StyleSheet.create({
   hamburgerToggle: {
     borderRadius: 999,
     padding: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     overflow: 'hidden',
     // Shadow for iOS
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     // Shadow for Android
-    elevation: 4,
+    elevation: 8,
   },
   hamburgerToggleBtn: {
     flexDirection: 'column',
@@ -1409,10 +1408,10 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
     // Shadow for Android
-    elevation: 4,
+    elevation: 8,
   },
   summaryViewToggleBtnWrapper: {
     flex: 1,

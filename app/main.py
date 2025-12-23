@@ -31,9 +31,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://localhost:3002",  # webApp2 dev server
         "http://localhost:8080",
         "http://localhost:5500",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3002",  # webApp2 dev server
         "http://127.0.0.1:8080",
         "http://127.0.0.1:5500",
         "https://pharmasight.co.za",
@@ -2606,10 +2608,59 @@ async def admin_page(request: Request):
 
 # Admin API Proxy Endpoints
 def _check_admin_access(request: Request) -> bool:
-    """Check if current user is admin (user_id: 2 or 9, or username: 'Charl', 'admin', or 'Amin')"""
+    """Check if current user is admin (user_id: 2 or 9, or username: 'Charl', 'admin', or 'Amin')
+    
+    Supports both session-based auth and bearer token auth for cross-origin requests.
+    """
+    # First check session-based auth
     user_id = request.session.get("user_id")
     username = request.session.get("username")
-    return user_id in [2, 9] or (username and username.lower() in ["charl", "admin", "amin"])
+    print(f"[DEBUG] _check_admin_access - session user_id: {user_id}, username: {username}")
+    
+    if user_id in [2, 9] or (username and username.lower() in ["charl", "admin", "amin"]):
+        print(f"[DEBUG] Session auth SUCCESS")
+        return True
+    
+    # Check for bearer token in Authorization header (for cross-origin requests from webApp2)
+    auth_header = request.headers.get("Authorization", "")
+    print(f"[DEBUG] Auth header: {auth_header[:50] if auth_header else 'None'}...")
+    
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        print(f"[DEBUG] Validating bearer token: {token[:20]}...")
+        
+        # Try to decode JWT token to get user info
+        try:
+            import jwt
+            # Decode without verification (just to get the payload)
+            # The token was already verified by the login endpoint
+            payload = jwt.decode(token, options={"verify_signature": False})
+            print(f"[DEBUG] JWT payload: {payload}")
+            
+            token_user_id = payload.get("user_id") or payload.get("sub")
+            token_username = payload.get("username", "")
+            
+            # Convert user_id to int if it's a string
+            if isinstance(token_user_id, str) and token_user_id.isdigit():
+                token_user_id = int(token_user_id)
+            
+            print(f"[DEBUG] Bearer token auth - user_id: {token_user_id}, username: {token_username}")
+            if token_user_id in [2, 9] or (token_username and token_username.lower() in ["charl", "admin", "amin"]):
+                # Store in session for subsequent requests
+                request.session["user_id"] = token_user_id
+                request.session["username"] = token_username
+                request.session["auth_token"] = token
+                print(f"[DEBUG] Bearer auth SUCCESS")
+                return True
+            else:
+                print(f"[DEBUG] User {token_username} ({token_user_id}) is not admin")
+        except Exception as e:
+            print(f"[DEBUG] JWT decode error: {e}")
+    else:
+        print(f"[DEBUG] No bearer token found")
+    
+    print(f"[DEBUG] Admin access DENIED")
+    return False
 
 @app.get("/api/admin/users")
 async def api_admin_list_users(request: Request) -> JSONResponse:

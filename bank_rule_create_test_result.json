@@ -1,0 +1,49 @@
+{
+  "request": {
+    "url": "https://pharmacy-api-webservice.onrender.com/bank-rules/pharmacies/1/bank-rules",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-API-Key": "super-secret-long-random-string"
+    },
+    "body": {
+      "pharmacy_id": 1,
+      "name": "Test Rule - Arrie Nel",
+      "type": "spend",
+      "priority": 1,
+      "contact_name": null,
+      "conditions": [
+        {
+          "group_type": "ALL",
+          "field": "description",
+          "operator": "contains",
+          "value": "Arrie Nel"
+        }
+      ],
+      "allocate": [
+        {
+          "account_id": 11,
+          "percent": 100.0,
+          "vat_code": "NO_VAT"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status_code": 500,
+    "headers": {
+      "date": "Wed, 10 Dec 2025 05:20:27 GMT",
+      "content-type": "text/plain; charset=utf-8",
+      "transfer-encoding": "chunked",
+      "connection": "keep-alive",
+      "cf-ray": "9aba4b05bd5c73ba-JNB",
+      "rndr-id": "5444840b-6ce4-4abc",
+      "vary": "Accept-Encoding",
+      "x-render-origin-server": "uvicorn",
+      "cf-cache-status": "DYNAMIC",
+      "server": "cloudflare",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    },
+    "body": "Internal Server Error"
+  }
+}

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - PharmaSight</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="apple-touch-icon" href="img/favicon.png">
+    <link rel="stylesheet" href="styles.css?v=11">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <img src="img/logo_light.png" alt="PharmaSight" class="sidebar-logo" />
+                </div>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle sidebar">
+                    <!-- Expand icon (shown when collapsed) -->
+                    <svg class="sidebar-expand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="13 17 18 12 13 7"></polyline>
+                        <polyline points="6 17 11 12 6 7"></polyline>
+                    </svg>
+                    <!-- Collapse icon (shown when expanded) -->
+                    <svg class="sidebar-collapse-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="11 17 6 12 11 7"></polyline>
+                        <polyline points="18 17 13 12 18 7"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <button class="nav-item active" data-tab="dashboard" data-tooltip="Dashboard">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="daily-summary" data-tooltip="Daily Summary">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Daily Summary</span>
+                    </button>
+                    <button class="nav-item" data-tab="monthly-summary" data-tooltip="Monthly Summary">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <line x1="3" y1="14" x2="21" y2="14"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Monthly Summary</span>
+                    </button>
+                    <button class="nav-item" data-tab="stock-management" data-tooltip="Stock Management">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Stock Management</span>
+                    </button>
+                </div>
+                <div class="nav-section-separator"></div>
+                <div class="nav-section">
+                    <button class="nav-item" data-tab="stock-queries" data-tooltip="Stock Queries">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Stock Queries</span>
+                    </button>
+                    <button class="nav-item" data-tab="debtor-tools" data-tooltip="Debtor Tools">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Debtor Tools</span>
+                    </button>
+                    <button class="nav-item" data-tab="daily" data-tooltip="Daily Tracking">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 11H5a2 2 0 0 0-2 2v3c0 1.1.9 2 2 2h4m0-7h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H9m0-7V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Daily Tracking</span>
+                    </button>
+                    <button class="nav-item" data-tab="targets" data-tooltip="Targets">
+                        <span class="nav-item-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                            </svg>
+                        </span>
+                        <span class="nav-item-label">Targets</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="nav-item admin-nav-item" data-tab="admin" data-tooltip="Admin Panel" title="Admin Panel">
+                    <span class="nav-item-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <path d="M9 12l2 2 4-4"></path>
+                        </svg>
+                    </span>
+                    <span class="nav-item-label">Admin</span>
+                </button>
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-details">
+                        <div class="user-name" id="user-name">User</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                    <button class="sign-out-btn" id="sign-out-btn" title="Sign out">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16,17 21,12 16,7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="page-title-section">
+                    <h1 class="page-title" id="page-title">Dashboard</h1>
+                </div>
+                <div class="top-bar-controls">
+                    <button class="view-mode-btn" id="view-mode-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="selected-view-mode-display">Daily</span>
+                    </button>
+                    <button class="pharmacy-picker-btn" id="pharmacy-picker-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3h18v18H3z"></path>
+                            <path d="M3 9h18"></path>
+                            <path d="M9 21V9"></path>
+                        </svg>
+                        <span id="selected-pharmacy-display">Select Pharmacy</span>
+                    </button>
+                    <button class="date-picker-btn" id="date-picker-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="selected-date-display">Today</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Floating View Mode Toggle (Mobile Only) -->
+            <button class="floating-view-mode-btn" id="floating-view-mode-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span id="floating-view-mode-display">Daily</span>
+            </button>
+
+            <!-- Content Area -->
+            <main class="content-area">
+                <div class="dashboard-container">
+                    <div class="welcome-section">
+                        <h2>Welcome to PharmaSight</h2>
+                        <p>This is the new dashboard design. Navigation items are ready, but functionality will be added soon.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- View Mode Picker Modal -->
+    <div class="pharmacy-picker-modal-overlay" id="view-mode-modal-overlay">
+        <div class="pharmacy-picker-modal">
+            <div class="pharmacy-picker-header">
+                <h3>Select View Mode</h3>
+            </div>
+            <div class="pharmacy-picker-list" id="view-mode-list">
+                <!-- View mode options will be populated here -->
+            </div>
+            <div class="pharmacy-picker-footer">
+                <button class="btn-primary" id="view-mode-close">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pharmacy Picker Modal -->
+    <div class="pharmacy-picker-modal-overlay" id="pharmacy-picker-modal-overlay">
+        <div class="pharmacy-picker-modal">
+            <div class="pharmacy-picker-header">
+                <h3>Select Pharmacy</h3>
+            </div>
+            <div class="pharmacy-picker-list" id="pharmacy-picker-list">
+                <!-- Pharmacy options will be populated here -->
+            </div>
+            <div class="pharmacy-picker-footer">
+                <button class="btn-primary" id="pharmacy-picker-close">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading data...</p>
+        </div>
+    </div>
+
+    <!-- Coming Soon Modal -->
+    <div class="pharmacy-picker-modal-overlay" id="coming-soon-modal-overlay">
+        <div class="pharmacy-picker-modal">
+            <div class="pharmacy-picker-header">
+                <h3 id="coming-soon-modal-title">Coming Soon</h3>
+            </div>
+            <div class="pharmacy-picker-list">
+                <div style="padding: 24px; text-align: center; color: rgba(255, 255, 255, 0.9);">
+                    <p id="coming-soon-modal-message">This feature is coming soon.</p>
+                </div>
+            </div>
+            <div class="pharmacy-picker-footer">
+                <button class="btn-primary" id="coming-soon-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Picker Modal -->
+    <div class="date-picker-modal-overlay" id="date-picker-modal-overlay">
+        <div class="date-picker-modal">
+            <div class="date-picker-header">
+                <h3>Select Date</h3>
+                <button class="date-picker-close-btn" id="date-picker-close-btn" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="date-picker-content">
+                <div class="date-picker-calendar-container">
+                    <div class="date-picker-month-nav">
+                        <button class="date-picker-nav-btn" id="date-picker-prev-month" aria-label="Previous month">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <div class="date-picker-month-year" id="date-picker-month-year">December 2024</div>
+                        <button class="date-picker-nav-btn" id="date-picker-next-month" aria-label="Next month">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="date-picker-weekdays">
+                        <div class="date-picker-weekday">Sun</div>
+                        <div class="date-picker-weekday">Mon</div>
+                        <div class="date-picker-weekday">Tue</div>
+                        <div class="date-picker-weekday">Wed</div>
+                        <div class="date-picker-weekday">Thu</div>
+                        <div class="date-picker-weekday">Fri</div>
+                        <div class="date-picker-weekday">Sat</div>
+                    </div>
+                    <div class="date-picker-days" id="date-picker-days">
+                        <!-- Calendar days will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="date-picker-footer">
+                <button class="date-picker-action-btn" id="date-picker-today-btn">Today</button>
+                <button class="date-picker-action-btn" id="date-picker-yesterday-btn">Yesterday</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Core Services -->
+    <script src="auth.js?v=4"></script>
+    <script src="js/services/api.js?v=5"></script>
+    
+    <!-- Components -->
+    <script src="js/components/pharmacyPicker.js?v=4"></script>
+    <script src="js/components/datePicker.js?v=4"></script>
+    
+    <!-- Utilities -->
+    <script src="js/utils/loading.js?v=1"></script>
+    <script src="js/utils/router.js?v=4"></script>
+    
+    <!-- Screens -->
+    <script src="js/screens/dashboard.js?v=16"></script>
+    <script src="js/screens/dailySummary.js?v=4"></script>
+    <script src="js/screens/monthlySummary.js?v=1"></script>
+    <script src="js/screens/stockManagement.js?v=1"></script>
+    <script src="js/screens/stockQueries.js?v=1"></script>
+    <script src="js/screens/debtorTools.js?v=1"></script>
+    <script src="js/screens/dailyTracking.js?v=5"></script>
+    <script src="js/screens/targets.js?v=2"></script>
+    
+    <!-- Main App -->
+    <script src="js/app.js?v=5"></script>
+</body>
+</html>
+

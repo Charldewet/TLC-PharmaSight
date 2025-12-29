@@ -8,6 +8,7 @@ class AdminScreen {
         this.currentEditUserId = null;
         this.currentEditUserPharmacies = {};
         this.pendingChanges = {}; // Track pending changes before save
+        this.pendingRoles = { is_admin: false, is_accounting: false }; // Track pending role changes
         this.listenersBound = false;
     }
 
@@ -216,6 +217,27 @@ class AdminScreen {
                         </button>
                     </div>
                     <div class="user-access-modal-content">
+                        <!-- User Roles section -->
+                        <div class="user-access-section user-roles-section">
+                            <label class="user-access-section-label">USER ROLES</label>
+                            <div class="user-roles-buttons">
+                                <button type="button" 
+                                    class="user-access-toggle-btn role-btn" 
+                                    id="role-admin-btn" 
+                                    data-role="admin"
+                                    title="Admin User">
+                                    Admin User
+                                </button>
+                                <button type="button" 
+                                    class="user-access-toggle-btn role-btn" 
+                                    id="role-accounting-btn" 
+                                    data-role="accounting"
+                                    title="Accounting User">
+                                    Accounting User
+                                </button>
+                            </div>
+                        </div>
+                        
                         <!-- Current pharmacy access list -->
                         <div class="user-access-section">
                             <label class="user-access-section-label">PHARMACY ACCESS</label>
@@ -485,6 +507,10 @@ class AdminScreen {
         // Reset password button
         document.getElementById('reset-password-btn')?.addEventListener('click', () => this.resetUserPassword());
         
+        // User roles buttons
+        document.getElementById('role-admin-btn')?.addEventListener('click', () => this.toggleRole('admin'));
+        document.getElementById('role-accounting-btn')?.addEventListener('click', () => this.toggleRole('accounting'));
+        
         // Edit button clicks (event delegation)
         document.getElementById('users-table-body')?.addEventListener('click', (e) => {
             const editBtn = e.target.closest('.edit-btn');
@@ -689,6 +715,9 @@ class AdminScreen {
             }
             console.log('Pending changes built:', this.pendingChanges);
             
+            // Load and render user roles
+            this.loadUserRoles(user);
+            
             // Render pharmacy access list
             this.refreshAccessList();
             
@@ -704,6 +733,7 @@ class AdminScreen {
             console.error('Error loading user pharmacies:', error);
             // Still show modal with empty state
             this.pendingChanges = {};
+            this.loadUserRoles(user); // Initialize roles even on error
             this.refreshAccessList();
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -721,6 +751,41 @@ class AdminScreen {
             document.body.style.overflow = '';
             this.currentEditUserId = null;
             this.pendingChanges = {};
+            this.pendingRoles = { is_admin: false, is_accounting: false };
+        }
+    }
+    
+    loadUserRoles(user) {
+        // Initialize pending roles from user data using boolean flags from API
+        // Handle cases where flags might be undefined/null (default to false)
+        this.pendingRoles = {
+            is_admin: user.is_admin === true,
+            is_accounting: user.is_accounting === true
+        };
+        
+        // Update button states
+        this.updateRoleButtons();
+    }
+    
+    toggleRole(role) {
+        if (role === 'admin') {
+            this.pendingRoles.is_admin = !this.pendingRoles.is_admin;
+        } else if (role === 'accounting') {
+            this.pendingRoles.is_accounting = !this.pendingRoles.is_accounting;
+        }
+        this.updateRoleButtons();
+    }
+    
+    updateRoleButtons() {
+        // Update button active states based on boolean flags
+        const adminBtn = document.getElementById('role-admin-btn');
+        const accountingBtn = document.getElementById('role-accounting-btn');
+        
+        if (adminBtn) {
+            adminBtn.classList.toggle('active', this.pendingRoles.is_admin);
+        }
+        if (accountingBtn) {
+            accountingBtn.classList.toggle('active', this.pendingRoles.is_accounting);
         }
     }
 
@@ -751,6 +816,9 @@ class AdminScreen {
             } catch (e) {
                 console.log('Could not fetch current state, proceeding with changes');
             }
+            
+            // Process role changes
+            await this.saveUserRoles(this.currentEditUserId);
             
             // Process changes
             for (const [phIdStr, pending] of Object.entries(this.pendingChanges)) {
@@ -1156,6 +1224,37 @@ class AdminScreen {
         }
         
         return true;
+    }
+    
+    async saveUserRoles(userId) {
+        try {
+            // Get current user to preserve other fields when updating roles
+            const currentUser = this.users.find(u => u.user_id === userId);
+            
+            // Update user roles via API using boolean flags
+            const url = `${API_BASE_URL}/admin/users/${userId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    ...this.getAdminAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    is_admin: this.pendingRoles.is_admin,
+                    is_accounting: this.pendingRoles.is_accounting
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Failed to save user roles: ${response.status}`);
+            }
+            
+            console.log('User roles saved successfully');
+        } catch (error) {
+            console.error('Error saving user roles:', error);
+            throw error; // Re-throw to be handled by saveAccessChanges
+        }
     }
 
     async refreshUsers() {

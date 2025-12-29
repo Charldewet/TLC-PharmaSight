@@ -7859,6 +7859,30 @@ select {
     letter-spacing: 0.5px;
 }
 
+/* User Roles Section */
+.user-roles-section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 20px;
+}
+
+.user-roles-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.user-roles-buttons .role-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
 /* Pharmacy Access List */
 .user-access-pharmacy-list {
     display: flex;
